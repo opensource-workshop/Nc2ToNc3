@@ -227,6 +227,11 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
  */
 	private function __saveCalendarEventFromNc2($nc2CalendarPlans) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  CalendarEvent data Migration start.'));
+		//暫定修正 本家が修正された場合に削除してかまいません
+		if(count($nc2CalendarPlans) === 0){
+			$this->writeMigrationLog(__d('nc2_to_nc3', '  CalendarEvent data Migration end.'));
+			return true;
+		}
 
 		/* @var $CalendarEvent CalendarEvent */
 		$CalendarEvent = ClassRegistry::init('Calendars.CalendarEvent');
