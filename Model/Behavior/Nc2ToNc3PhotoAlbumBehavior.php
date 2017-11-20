@@ -73,6 +73,10 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 			null,
 			-1
 		);
+		//$Block->findByRoomIdAndPluginKeyでデータが取得できない場合がある
+		if(!$nc3Block){
+			return array();
+		}
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		/* @var $Nc2ToNc3Upload Nc2ToNc3Upload */
