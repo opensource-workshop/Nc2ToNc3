@@ -96,7 +96,15 @@ class Nc2ToNc3Menu extends Nc2ToNc3AppModel {
 			'conditions' => [
 				'Nc2MenuDetail.block_id' => $nc2BlockId
 			],
-			'recursive' => -1
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2Blocks',
+					'table' => 'blocks',
+					'conditions' => 'Nc2MenuDetail.block_id = Nc2Blocks.block_id AND Nc2Blocks.action_name LIKE "%menu%"',
+				]
+			]
 		];
 		$nc2MenuDetails = $Nc2MenuDetail->find('all', $query);
 
