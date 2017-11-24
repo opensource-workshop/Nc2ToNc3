@@ -112,6 +112,11 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Migration end.'));
 
+		/* データ登録後の並べ替え処理 */
+		if (!$this->__movePageFromNc2Pages()) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -341,5 +346,89 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
 		return $nc3Page;
 	}
+
+/**
+ * Modify Nc3Page data.
+ *
+ * @return bool
+ */
+
+
+	private function __movePageFromNc2Pages() {
+		$Nc2Page = $this->getNc2Model('pages');
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Move start.'));
+		//1.理想の順序を取得する
+		$sql = '
+			SELECT Nc2Page.page_id, Nc2Page.page_name FROM (
+				SELECT
+					CAST(
+						CONCAT( IFNULL(p1_thread_num, ""), IFNULL(p1_display_sequence, ""),IFNULL(p2_thread_num, ""), IFNULL(p2_display_sequence, ""),IFNULL(p3.thread_num, ""), IFNULL(p3.display_sequence, ""))
+					AS UNSIGNED ) AS sort_key,
+					p3.page_id,
+					p3.page_name,
+					p3.permalink,
+					p3.parent_id
+				FROM misato2_pages p3
+				LEFT JOIN (
+					SELECT p2.page_id, p1_thread_num, p1_display_sequence,
+						   p2.thread_num AS p2_thread_num, p2.display_sequence AS p2_display_sequence
+					FROM misato2_pages p2
+					LEFT JOIN (
+						SELECT p1.page_id, p1.thread_num AS p1_thread_num, p1.display_sequence AS p1_display_sequence
+						FROM misato2_pages p1
+						WHERE p1.thread_num = 1 AND p1.thread_num > 0
+						ORDER BY p1.thread_num, p1.display_sequence
+					) p1 ON p2.parent_id = p1.page_id
+					WHERE p2.thread_num > 0
+				) p2 ON p3.parent_id = p2.page_id
+				WHERE p3.thread_num > 0 AND p3.parent_id = 1
+				ORDER BY sort_key
+			) Nc2Page
+';
+		$nc2Pages = $Nc2Page->query($sql, []);
+		$nc2PageIds = [];
+		foreach ($nc2Pages as $model) {
+			$nc2PageIds[] = $model['Nc2Page']['page_id'];
+		}
+		unset($nc2Pages);
+
+		//2.対象データを理想の順序順に並べ替える
+		//対象データを取得
+		$nc2Maps = $this->getMap($nc2PageIds);
+		//登録データを整形
+		$nc3MovePageIds = [];
+		foreach ($nc2PageIds as $nc2PageId) {
+			//$nc2PageId = $model['Nc2Page']['page_id'];
+			$nc2Map = $nc2Maps[$nc2PageId];
+			$nc3PageId = $nc2Map['Page']['id'];
+			//$nc3PagePermalink = $nc2Map['Page']['permalink'];
+			//$nc3BoxRoomId = $nc2Map['Box']['room_id'];
+			$nc3MovePageIds[] = [
+				'Page' => [
+					'id' => $nc3PageId,
+					'room_id' => 1,//とりあえず1 今後階層分対応するかも
+					'parent_id' => 1 ,//とりあえず1
+					'type' => 'bottom',//最下部に移動する
+				],
+				'Room' => [
+					'id' => 1,
+				]
+			];
+		}
+
+		//3.並べ替えた対象データをcount($nc3MovePageIds)分、最下部に移動する
+		$Page = ClassRegistry::init('Pages.Page');
+		foreach ($nc3MovePageIds as $data) {
+			if(!$Page->saveMove($data)){
+				return false;
+			}
+		}
+		unset($nc3MovePageIds);
+		unset($nc2PageIds);
+	
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Move end.'));
+		return true;
+	}
+
 
 }
