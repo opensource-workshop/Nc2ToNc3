@@ -100,6 +100,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 		$PhotoAlbumsComponent = new PhotoAlbumsComponent(new ComponentCollection());
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		foreach ($nc2PhotoalbumBlocks as $nc2PhotoalbumBlock) {
 			$PhotoAlbum->begin();
@@ -112,6 +113,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				Current::write('Frame', $frame['Frame']);
 				Current::write('Room.id', $nc3RoomId);
 				$Block->create();
+				$BlocksLanguage->create(); //前移行プラグインに影響を与えているので暫定対応 20170/12/4 horiguchi
 				$PhotoAlbumsComponent->initializeSetting();
 				$frameSetting = $FrameSetting->read();
 				$data = [
