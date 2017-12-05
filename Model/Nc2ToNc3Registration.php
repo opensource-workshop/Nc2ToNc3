@@ -108,6 +108,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		foreach ($nc2Registrations as $nc2Registration) {
 			$Registration->begin();
 			try {
@@ -126,6 +127,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				Current::write('Room.id', $nc3RoomId);
 				$Frame->create();
 				$Block->create();
+				$BlocksLanguage->create(); //前移行プラグインに影響を与えているので暫定対応 20170/12/4 horiguchi
 				$Registration->createBlock($frame);
 
 				$data = $this->generateNc3RegistrationData($nc2Registration);
