@@ -84,6 +84,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 		$query = [
 			'conditions' => [
 				'Nc2Block.module_id !=' => '0',
+				'Nc2Block.action_name !=' => 'login_view_main_init',//ログインモジュールは移行しないので追加 add by horiguchi@osws
 				'or' => [
 					// デフォルトのNc2Blockデータ（お知らせ３つ）、メニュー、imagineは移行しない方が良いと思う。
 					'Nc2Block.block_id >' => '5',
