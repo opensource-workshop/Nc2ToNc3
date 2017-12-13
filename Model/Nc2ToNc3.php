@@ -288,6 +288,14 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			}
 		}
 
+		// 移行共通後処理
+		$CommonAfterModel = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3CommonAfter');
+		if (!$CommonAfterModel->migrate()) {
+			$this->validationErrors = $CommonAfterModel->validationErrors;
+			return false;
+		}
+
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
 
 		return true;
