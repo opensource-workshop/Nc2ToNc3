@@ -112,6 +112,11 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Migration end.'));
 
+		/* データ登録後の並べ替え処理 */
+		if (!$this->__movePageFromNc2Pages()) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -341,5 +346,82 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
 		return $nc3Page;
 	}
+
+/**
+ * Modify Nc3Page data.
+ *
+ * @return bool
+ */
+	private function __movePageFromNc2Pages() {
+		$Nc2Page = $this->getNc2Model('pages');
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Move start.'));
+		//1.理想の順序を取得する
+		$query = [
+			'conditions' => [
+				'Nc2Page.parent_id >' => 0,
+				'Nc2Page.thread_num >' => 0,
+			],
+			'order' => [
+				'Nc2Page.parent_id ASC',
+				'Nc2Page.thread_num ASC',
+				'Nc2Page.display_sequence ASC'
+			],
+		];
+		$nc2Pages = $Nc2Page->find('all', $query);
+
+		$nc2PageIds = [];
+		foreach ($nc2Pages as $model) {
+			$nc2PageIds[] = $model['Nc2Page']['page_id'];
+			$nc2ParentIds[] = $model['Nc2Page']['parent_id'];
+			$nc2PageDatas[] = [
+								'page_id' => $model['Nc2Page']['page_id'],
+								'parent_id' => $model['Nc2Page']['parent_id'],
+							];
+		}
+		unset($nc2Pages);
+
+		//2.対象データを理想の順序順に並べ替える
+		//対象データを取得
+		$nc2Maps = $this->getMap($nc2PageIds);
+		$nc2ParentMaps = $this->getMap($nc2ParentIds);
+		unset($nc2PageIds);
+		unset($nc2ParentIds);
+
+		//登録データを整形
+		$nc3MovePageIds = [];
+		foreach ($nc2PageDatas as $nc2Page) {
+			$nc2Map = $nc2Maps[$nc2Page['page_id']];
+			$nc3PageId = $nc2Map['Page']['id'];
+			$nc2ParentIdMap =$nc2ParentMaps[$nc2Page['parent_id']];
+			$nc3ParentId = $nc2ParentIdMap['Page']['id'];
+			//使う？
+			$nc3BoxRoomId = $nc2Map['Box']['room_id'];
+			$nc3MovePageIds[] = [
+				'Page' => [
+					'id' => $nc3PageId,
+					'room_id' => 1,//とりあえず1 今後階層分対応するかも
+					'parent_id' => $nc3ParentId ,//とりあえず1
+					'type' => 'bottom',//最下部に移動する
+				],
+				'Room' => [
+					'id' => 1,
+				]
+			];
+		}
+//CakeLog::debug(print_r($nc3MovePageIds, true));
+		//3.並べ替えた対象データをcount($nc3MovePageIds)分、最下部に移動する
+		$Page = ClassRegistry::init('Pages.Page');
+		foreach ($nc3MovePageIds as $data) {
+			if(!$Page->saveMove($data)){
+				return false;
+			}
+		}
+		unset($nc3MovePageIds);
+		unset($nc2PageDatas);
+	
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Move end.'));
+		return true;
+	}
+
 
 }
