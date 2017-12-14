@@ -259,11 +259,13 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  * @return bool
  */
 	private function __deleteMenuFrame() {
+		/* デフォルトメニューフレームID*/
+		$defaultMenuFrameId = 2;
 		
 		/* 右、左にあるメニューを削除する */
 		$Frame = ClassRegistry::init('Frames.Frame');
 		$query = [
-			'fields' => 'Frame.id, Frame.plugin_key',
+			'fields' => 'Frame.id, Frame.plugin_key, Frame.box_id, Frame.weight',
 			'recursive' => -1,
 			'joins' => [
 				[
@@ -278,7 +280,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 					array('Boxes.container_type' => 2), //1:Header, 2:Major, 3:Main, 4:Minor, 5:Footer
 					array('Boxes.container_type' => 4),
 				),
-				'Frame.id !=' => 2, //デフォルトメニューフレームは削除しない
+				'Frame.id !=' => $defaultMenuFrameId, //デフォルトメニューフレームは削除しない
 				'Frame.plugin_key' => 'menus', //今の所メニューだけ削除
 			],
 		];
@@ -288,12 +290,44 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				'id' => $UpdateFrame['Frame']['id'],
 				'plugin_key' => $UpdateFrame['Frame']['plugin_key'],
 				'is_deleted' => true,
+				'weight' => $UpdateFrame['Frame']['weight'],
+				'box_id' => $UpdateFrame['Frame']['box_id'],
 			];
 			if (! $Frame->saveFrame($data)) {
 				//エラー処理
 				return false;
 			}
 		}
+
+		/*デフォルトメニューを一番上に表示させる*/
+		$boxId = $UpdateFrame['Frame']['box_id'];
+		unset($UpdateFrame);
+		/* 左カラムの表示中のフレームを取得 */
+		$query = [
+			'fields' => 'Frame.id, Frame.plugin_key, Frame.box_id, Frame.weight',
+			'conditions' => [
+				'Frame.box_id' => $boxId,
+				'Frame.weight !=' => NULL,
+				'Frame.is_deleted' => 0,
+				'Frame.id !=' => $defaultMenuFrameId,
+			],
+			'order' => ['Frame.weight DESC'], 
+		];
+		$SortFrames = $Frame->find('all', $query);
+		/* 取得したフレームを一つずつ下げていく */
+		foreach ($SortFrames as $SortFrame) {
+			$data['Frame'] = [
+				'id' => $SortFrame['Frame']['id'],
+				'plugin_key' => $SortFrame['Frame']['plugin_key'],
+				'weight' => $SortFrame['Frame']['weight'],
+				'box_id' => $SortFrame['Frame']['box_id'],
+			];
+			if (! $Frame->saveWeight($data, 'down')) {
+				//エラー処理
+				return false;
+			}
+		}
+
 		return true;
 	}
 
@@ -311,7 +345,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			'plugin_key' => 'announcements',
 			'is_deleted' => true,
 			'block_id' => 1,
-			'weight' => NULL,
+			'weight' => NULL,//TODO 一番下だからNULLで良い？
 			'box_id' => 16,//TODO 本当にこれでOKで？
 		];
 		if (! $Frame->saveFrame($data)) {
@@ -335,6 +369,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			'conditions' => [
 				'Nc2Page.parent_id >' => 0,
 				'Nc2Page.thread_num >' => 0,
+				'Nc2Page.parent_id !=' => 2, //グループスペースは除く
 			],
 			'order' => [
 				'Nc2Page.parent_id ASC',
@@ -360,7 +395,8 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
 
 		$nc2Maps = $Nc2ToNc3Page->getMap($nc2PageIds);
-		$nc2ParentMaps = $Nc2ToNc3Page->getMap($nc2ParentIds);
+		//グループスペースは移行mapに入っていない
+		$nc2ParentMaps = $Nc2ToNc3Page->getMap(array_unique($nc2ParentIds));
 		unset($nc2PageIds);
 		unset($nc2ParentIds);
 
@@ -369,7 +405,10 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		foreach ($nc2PageDatas as $nc2Page) {
 			$nc2Map = $nc2Maps[$nc2Page['page_id']];
 			$nc3PageId = $nc2Map['Page']['id'];
-			$nc2ParentIdMap =$nc2ParentMaps[$nc2Page['parent_id']];
+			if (!array_key_exists($nc2Page['parent_id'], $nc2ParentMaps)){
+				continue;
+			}
+			$nc2ParentIdMap = $nc2ParentMaps[$nc2Page['parent_id']];
 			$nc3ParentId = $nc2ParentIdMap['Page']['id'];
 			//使う？
 			$nc3BoxRoomId = $nc2Map['Box']['room_id'];
