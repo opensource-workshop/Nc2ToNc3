@@ -68,15 +68,232 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			return false;
 		}
 
-		/* ルームを新テーマにする */
+		/* 右、左にあるメニューを削除する */
+		if (!$this->__deleteMenuFrame()) {
+			return false;
+		}
+
+		/* デフォルトメニューのフレーム値をnoneにする */
+		if (!$this->__changeDefaultMenuFrame()) {
+			return false;
+		}
+
+		/* ヘッダーエリアにあるモジュールのフレーム値をnoneにする */
+		if (!$this->__changeHeaderAllFrame()) {
+			return false;
+		}
+
+		/* NC2時にグループで囲われていたモジュールを並び替える */
+		if (!$this->__changeGroupBlockSort()) {
+			return false;
+		}
+
+		/* 緊急連絡のフレーム表示を赤にする */
+		if (!$this->__changeEmergencyFrame()) {
+			return false;
+		}
+
+		/* ページのレイアウトを移行する */
+		/* コアにマージするかも */
+		if (!$this->__migratePageLayout()) {
+			return false;
+		}else{
+			/* 右、左、ヘッダー、なしレイアウトの場合にレイアウト含めたデザインを調整する */
+			if (!$this->__adjustMainOnlyLayout()) {
+				return false;
+			}
+		}
+
+		/* サイト管理情報を移行する */
+		/* コアにマージするかも */
+		if (!$this->__migrateSiteConfig()) {
+			return false;
+		}
+
+
+		/* ルームを新テーマにする 今は不要 */
 		/*
-		FullWidthBasicBlue
-		FullWidthBasicRed
+		if (!$this->__changeDefaultTheme()) {
+			return false;
+		}
 		*/
+
+		/*
+			各NCでの個別処理は下記に記載する
+		*/
+		/* ヘッダーフォトアルバム削除する */
+		/* ヘッダーブロックの結合 2つのブロックをdiv float:leftで囲み、不要なフレームは削除 */
 
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration Common After end.'));
 
+		return true;
+	}
+
+
+
+
+/**
+ * Migrate Site Config.
+ *
+ * @return bool
+ */
+	private function __migrateSiteConfig() {
+		/* サイト管理情報を移行する */
+		/* コアにマージするかも */
+		return true;
+	}
+
+/**
+ * Migrate Page Layout.
+ *
+ * @return bool
+ */
+	private function __migratePageLayout() {
+		/* ページのレイアウトを移行する */
+		return true;
+	}
+
+
+/**
+ * Adjust Main Only Layout.
+ *
+ * @return bool
+ */
+	private function __adjustMainOnlyLayout() {
+		/*__migratePageLayoutを実行後に実行 */
+		/* 右、左、ヘッダー、なしレイアウトの場合にレイアウト含めたデザインを調整する */
+		return true;
+	}
+
+/**
+ * Change Emergency Frame.
+ *
+ * @return bool
+ */
+	private function __changeEmergencyFrame() {
+		/* 緊急連絡のフレーム表示を赤にする */
+		return true;
+	}
+
+/**
+ * Change Group Block Sort.
+ *
+ * @return bool
+ */
+	private function __changeGroupBlockSort() {
+		/* NC2時にグループで囲われていたモジュールを並び替える */
+		/* 結構難しそう */
+		return true;
+	}
+
+
+/**
+ * Change Header All Frame.
+ *
+ * @return bool
+ */
+	private function __changeHeaderAllFrame() {
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$query = [
+			'fields' => 'Frame.id, Frame.plugin_key',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Boxes',
+					'table' => 'boxes',
+					'conditions' => 'Boxes.id = Frame.box_id',
+				]
+			],
+			'conditions' => [
+				'Boxes.container_type' => 1, //1:Header, 2:Major, 3:Main, 4:Minor, 5:Footer
+			],
+		];
+		$UpdateFrames = $Frame->find('all', $query);
+		foreach ($UpdateFrames as $UpdateFrame) {
+			/* 抽出された全てのフレームをnoneにする */
+			$data['Frame'] = [
+				'id' => $UpdateFrame['Frame']['id'],
+				'plugin_key' => $UpdateFrame['Frame']['plugin_key'],
+				'header_type' => 'none',
+			];
+			if (! $Frame->saveFrame($data)) {
+				//エラー処理
+				return false;
+			}
+		}
+		return true;
+	}
+
+/**
+ * Change Default Menu Frame.
+ *
+ * @return bool
+ */
+	private function __changeDefaultMenuFrame() {
+		/* デフォルトメニューのフレーム値をnoneにしてタイトルを空白にする */
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$data['Frame'] = [
+			'id' => 2,
+			'plugin_key' => 'menus',
+			'header_type' => 'none',
+		];
+		$data['FramesLanguage'] = [
+			'id' => 2,
+			'frame_id' => 2,
+			'name' => '',
+		];
+		if (! $Frame->saveFrame($data)) {
+			//エラー処理
+			return false;
+		}
+
+		return true;
+	}
+
+
+/**
+ * Delete Menu data.
+ *
+ * @return bool
+ */
+	private function __deleteMenuFrame() {
+		
+		/* 右、左にあるメニューを削除する */
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$query = [
+			'fields' => 'Frame.id, Frame.plugin_key',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Boxes',
+					'table' => 'boxes',
+					'conditions' => 'Boxes.id = Frame.box_id',
+				]
+			],
+			'conditions' => [
+				'OR' => array(
+					array('Boxes.container_type' => 2), //1:Header, 2:Major, 3:Main, 4:Minor, 5:Footer
+					array('Boxes.container_type' => 4),
+				),
+				'Frame.id !=' => 2, //デフォルトメニューフレームは削除しない
+				'Frame.plugin_key' => 'menus', //今の所メニューだけ削除
+			],
+		];
+		$UpdateFrames = $Frame->find('all', $query);
+		foreach ($UpdateFrames as $UpdateFrame) {
+			$data['Frame'] = [
+				'id' => $UpdateFrame['Frame']['id'],
+				'plugin_key' => $UpdateFrame['Frame']['plugin_key'],
+				'is_deleted' => true,
+			];
+			if (! $Frame->saveFrame($data)) {
+				//エラー処理
+				return false;
+			}
+		}
 		return true;
 	}
 
@@ -89,12 +306,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 
 		/* お知らせモジュールの削除 */
 		$Frame = ClassRegistry::init('Frames.Frame');
-		$defaultAnnouncementId = 1;
 		$data['Frame'] = [
-			'id' => 1,//TODO 本当にこれでOKで？
+			'id' => 1,
 			'plugin_key' => 'announcements',
 			'is_deleted' => true,
-			'block_id' => 1,//TODO 本当にこれでOKで？
+			'block_id' => 1,
 			'weight' => NULL,
 			'box_id' => 16,//TODO 本当にこれでOKで？
 		];
@@ -182,4 +398,24 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Move end.'));
 		return true;
 	}
+
+/**
+ * Change Default Theme.
+ *
+ * @return bool
+ */
+	private function __changeDefaultTheme() {
+		$Room = ClassRegistry::init('Rooms.Room');
+
+		$data['Room'] = [
+			'id' => 1,
+			'theme' => "FullWidthBasicRed",
+		];
+		if (! $Room->saveTheme($data)) {
+			//エラー処理
+			return false;
+		}
+		return true;
+	}
+
 }
