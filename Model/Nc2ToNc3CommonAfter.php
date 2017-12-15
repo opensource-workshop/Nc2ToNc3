@@ -298,11 +298,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				return false;
 			}
 		}
+		unset($UpdateFrames);
 
 		/*デフォルトメニューを一番上に表示させる*/
-		$boxId = $UpdateFrame['Frame']['box_id'];
-		unset($UpdateFrame);
 		/* 左カラムの表示中のフレームを取得 */
+		$boxId = 18;//左カラムのbox_idは18
 		$query = [
 			'fields' => 'Frame.id, Frame.plugin_key, Frame.box_id, Frame.weight',
 			'conditions' => [
@@ -346,7 +346,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			'is_deleted' => true,
 			'block_id' => 1,
 			'weight' => NULL,//TODO 一番下だからNULLで良い？
-			'box_id' => 16,//TODO 本当にこれでOKで？
+			'box_id' => 16,//デフォルトメインエリアのbox_idは18
 		];
 		if (! $Frame->saveFrame($data)) {
 			//エラー処理
@@ -378,15 +378,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			],
 		];
 		$nc2Pages = $Nc2Page->find('all', $query);
-
 		$nc2PageIds = [];
 		foreach ($nc2Pages as $model) {
 			$nc2PageIds[] = $model['Nc2Page']['page_id'];
 			$nc2ParentIds[] = $model['Nc2Page']['parent_id'];
-			$nc2PageDatas[] = [
-								'page_id' => $model['Nc2Page']['page_id'],
-								'parent_id' => $model['Nc2Page']['parent_id'],
-							];
+			$nc2PageDatas[$model['Nc2Page']['parent_id']][] = $model['Nc2Page']['page_id'];
 		}
 		unset($nc2Pages);
 
@@ -401,31 +397,58 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		unset($nc2ParentIds);
 
 		//登録データを整形
+		asort($nc2PageDatas);
+		$Page = ClassRegistry::init('Pages.Page');
 		$nc3MovePageIds = [];
-		foreach ($nc2PageDatas as $nc2Page) {
-			$nc2Map = $nc2Maps[$nc2Page['page_id']];
-			$nc3PageId = $nc2Map['Page']['id'];
-			if (!array_key_exists($nc2Page['parent_id'], $nc2ParentMaps)){
+		foreach ($nc2PageDatas as $nc2ParentId => $nc2PageIds) {
+
+			// 移行対象じゃないルームは除く
+			if (!array_key_exists($nc2ParentId, $nc2ParentMaps)){
 				continue;
 			}
-			$nc2ParentIdMap = $nc2ParentMaps[$nc2Page['parent_id']];
+
+			// NC3のルーム内のページが一つの場合は除く
+			if(count($nc2PageIds) === 1) {
+				continue;
+			}
+
+			/* NC3でのルーム最下層PageIdを取得 */
+			$nc2ParentIdMap = $nc2ParentMaps[$nc2ParentId];
 			$nc3ParentId = $nc2ParentIdMap['Page']['id'];
-			//使う？
-			$nc3BoxRoomId = $nc2Map['Box']['room_id'];
-			$nc3MovePageIds[] = [
-				'Page' => [
-					'id' => $nc3PageId,
-					'room_id' => 1,//とりあえず1 今後階層分対応するかも
-					'parent_id' => $nc3ParentId ,//とりあえず1
-					'type' => 'bottom',//最下部に移動する
+			$query = [
+				'fields' => 'Page.id, Page.parent_id, Page.lft, Page.rght',
+				'recursive' => -1,
+				'conditions' => [
+					'Page.parent_id' => $nc3ParentId,
 				],
-				'Room' => [
-					'id' => 1,
-				]
+				'order' => ['Page.rght DESC'], 
 			];
+			$Nc3BottomPageData = $Page->find('first', $query);
+			$Nc3BottomPageId = $Nc3BottomPageData['Page']['id'];
+
+			foreach ($nc2PageIds as $nc2PageId) {
+				$nc2Map = $nc2Maps[$nc2PageId];
+				$nc3PageId = $nc2Map['Page']['id'];
+				//最初の並べ替えページが最下部のページだった場合に並べ替えはしない
+				if($nc2PageId === reset($nc2PageIds) && $Nc3BottomPageId === $nc3PageId){
+					continue;
+				}
+
+				$nc3BoxRoomId = $nc2Map['Box']['room_id'];
+				$nc3MovePageIds[] = [
+					'Page' => [
+						'id' => $nc3PageId,
+						'room_id' => $nc3BoxRoomId,
+						'parent_id' => $nc3ParentId ,
+						'type' => 'bottom',//最下部に移動する
+					],
+					'Room' => [
+						'id' => $nc3BoxRoomId,
+					]
+				];
+			}
 		}
 		//3.並べ替えた対象データをcount($nc3MovePageIds)分、最下部に移動する
-		$Page = ClassRegistry::init('Pages.Page');
 		foreach ($nc3MovePageIds as $data) {
 			if(!$Page->saveMove($data)){
 				return false;
