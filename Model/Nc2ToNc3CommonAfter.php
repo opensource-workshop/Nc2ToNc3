@@ -173,6 +173,35 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  */
 	private function __changeEmergencyFrame() {
 		/* 緊急連絡のフレーム表示を赤にする */
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$query = [
+			'fields' => 'Frame.id, Frame.plugin_key',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'FramesLanguages',
+					'table' => 'frames_languages',
+					'conditions' => 'FramesLanguages.frame_id = Frame.id',
+				]
+			],
+			'conditions' => [
+				'FramesLanguages.name' => '緊急連絡',
+			],
+		];
+		$UpdateFrames = $Frame->find('all', $query);
+		foreach ($UpdateFrames as $UpdateFrame) {
+			/* 抽出された全てのフレームをdangerにする */
+			$data['Frame'] = [
+				'id' => $UpdateFrame['Frame']['id'],
+				'plugin_key' => $UpdateFrame['Frame']['plugin_key'],
+				'header_type' => 'danger',
+			];
+			if (! $Frame->saveFrame($data)) {
+				//エラー処理
+				return false;
+			}
+		}
 		return true;
 	}
 
