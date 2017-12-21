@@ -198,6 +198,7 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 
 		// display_type更新
 		$displayType = $nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['display'];
+
 		switch ($displayType) {
 			case '0':
 				$displayType = PhotoAlbumFrameSetting::DISPLAY_TYPE_ALBUMS;
@@ -220,7 +221,8 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
 			'created_user' => $Nc2ToNc3User->getCreatedUser($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']),
 			'created' => $this->_convertDate($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['insert_time']),
 		];
-		$data += $photoAlbumFrameSet;
+		// 配列を上書き
+		$data = array_merge($data, $photoAlbumFrameSet);
 
 		return $data;
 	}
