@@ -202,7 +202,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			return 'medium';
 		}
 
-		return 'big';
+		return '';
 	}
 
 /**
