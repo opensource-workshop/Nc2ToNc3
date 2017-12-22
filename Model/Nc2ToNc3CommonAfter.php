@@ -110,6 +110,10 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* プライベートスペースの利用を不可にする(一般の場合) */
+		if (!$this->__changeUserRoleSetting()) {
+			return false;
+		}
 
 		/* ルームを新テーマにする 今は不要 */
 		/*
@@ -163,6 +167,28 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 	private function __adjustMainOnlyLayout() {
 		/*__migratePageLayoutを実行後に実行 */
 		/* 右、左、ヘッダー、なしレイアウトの場合にレイアウト含めたデザインを調整する */
+		return true;
+	}
+
+/**
+ * Change User Role Setting.
+ *
+ * @return bool
+ */
+	private function __changeUserRoleSetting() {
+		/* プライベートスペースの利用を不可にする(一般の場合) */
+		$UserRoleSetting = ClassRegistry::init('UserRoles.UserRoleSetting');
+		$data['UserRoleSetting'] = [
+			'id' => 3, //3
+			'role_key' => 'common_user',
+			'origin_role_key' => 'common_user',
+			'use_private_room' => 0,
+		];
+		if (! $UserRoleSetting->saveUserRoleSetting($data)) {
+			//エラー処理
+			return false;
+		}
+
 		return true;
 	}
 
