@@ -33,7 +33,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 		'Security',
 		'ControlPanel.ControlPanelLayout',
 		'NetCommons.Permission' => [
-			'type' => PermissionComponent::CHECK_TYEP_SYSTEM_PLUGIN
+			'type' => PermissionComponent::CHECK_TYPE_SYSTEM_PLUGIN
 		],
 	];
 
@@ -41,6 +41,7 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
  * migration
  *
  * @return void
+ * @SuppressWarnings(PHPMD.DevelopmentCodeFragment)
  */
 	public function migration() {
 		if ($this->request->is('post')) {
@@ -51,7 +52,9 @@ class Nc2ToNc3Controller extends Nc2ToNc3AppController {
 				return;
 			}
 
-			$this->NetCommons->handleValidationError($this->Nc2ToNc3->validationErrors);
+			//$this->NetCommons->handleValidationError($this->Nc2ToNc3->validationErrors);
+			CakeLog::info('[ValidationErrors] ' . $this->request->here());
+			CakeLog::info(print_r($this->Nc2ToNc3->validationErrors, true));
 		} else {
 			$this->request->data['Nc2ToNc3'] = $this->Nc2ToNc3->create();
 		}
