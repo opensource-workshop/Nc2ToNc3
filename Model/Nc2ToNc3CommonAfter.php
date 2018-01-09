@@ -482,7 +482,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			$Nc3BottomPageId = $Nc3BottomPageData['Page']['id'];
 
 			foreach ($nc2PageIds as $nc2PageId) {
+				if(!isset($nc2Maps[$nc2PageId])){
+					continue;
+				}
 				$nc2Map = $nc2Maps[$nc2PageId];
+
 				$nc3PageId = $nc2Map['Page']['id'];
 				//最初の並べ替えページが最下部のページだった場合に並べ替えはしない
 				if($nc2PageId === reset($nc2PageIds) && $Nc3BottomPageId === $nc3PageId){
