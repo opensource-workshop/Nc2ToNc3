@@ -160,7 +160,17 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 					$Frame->rollback();
 					continue;
 				}
-
+				
+				/* 管理者でもプライベートルームに配置されたカレンダーは移行できない */
+				if($data['Frame']['plugin_key'] === 'calendars'){
+						$CalendarFrameSetting = ClassRegistry::init('Calendars.CalendarFrameSetting');
+						$roomIds = $CalendarFrameSetting->getReadableRoomIds();
+						/* 管理者ルーム以外は配置できない */
+						if(!isset($roomIds[$data['Frame']['room_id']])){
+							$Frame->rollback();
+							continue;
+						}
+				}
 				// Frame::saveFrameから、各プラグインのafterFrameSaveが呼び出され、その中で参照している値を一時書き換え
 				// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Calendar.php#L333
 				if (!$nc3CurrentRoom) {
