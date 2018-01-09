@@ -193,7 +193,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 						var_export($CalendarFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
-					$CalendarFrameSetting->rollback($ex);
+					$CalendarFrameSetting->rollback();
 					continue;
 				}
 
@@ -356,8 +356,11 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 			'recursive' => -1
 		];
 		$nc3EventCount = $CalendarEvent->find('count', $query);
-		if ($nc3EventCount) {
+		if ($nc3EventCount > 0) {
 			$nc3Event = $CalendarEvent->getEventById($nc3EventId);
+		}else{
+			// Eventが無い場合を考慮
+			return false;
 		}
 
 		// 更新処理でしか使われてなさげだが、同じような処理にしとく
