@@ -282,9 +282,10 @@ class Nc2ToNc3PhotoAlbumBehavior extends Nc2ToNc3BaseBehavior {
  * @return string Log argument
  */
 	private function __getLogArgument($nc2Photoalbum) {
-		if (!isset($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id'])) {
+		/*変数名と判断を修正*/
+		if (isset($nc2Photoalbum['Nc2PhotoalbumBlock']['block_id'])) {
 			return 'Nc2PhotoalbumBlock' .
-				'block_id' . $nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id'];
+				'block_id' . $nc2Photoalbum['Nc2PhotoalbumBlock']['block_id'];
 		}
 
 		if (isset($nc2Photoalbum['Nc2Photoalbum'])) {

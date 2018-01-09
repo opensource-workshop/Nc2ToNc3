@@ -108,6 +108,13 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 
 				$nc2BlockId = $nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id'];
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
+				/* エラーハンドリングを追加 */
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2PhotoalbumBlock));
+					$this->writeMigrationLog($message);
+					$PhotoAlbum->rollback();
+					continue;
+				}
 				$frame = $Frame->findById($frameMap['Frame']['id'], null, null, -1);
 				$nc3RoomId = $frameMap['Frame']['room_id'];
 				Current::write('Frame', $frame['Frame']);
@@ -208,6 +215,13 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 					continue;
 				}
 				$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
+				/* エラーハンドリングを追加 */
+				if (!$frameMap) {
+					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2PhotoalbumBlock));
+					$this->writeMigrationLog($message);
+					$PhotoAlbum->rollback();
+					continue;
+				}
 
 				$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];
 				$nc2Photos = $Nc2PhotoalbumPhoto->findAllByAlbumId($nc2AlbumId, null, ['photo_sequence' => 'ASC'], -1);
