@@ -99,6 +99,14 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 			'size' => filesize($tmpName)
 		];
 
+		//パスワード付きPDFのチェックを追加（NC3へ移行はできない）
+		$nc2UploadPdfPassword = $this->checkPdfPassword($data);
+		if (!$nc2UploadPdfPassword) {
+			$message = __d('nc2_to_nc3', '%s found password PDF.', 'Nc2Upload:' . $nc2UploadId);
+			$this->writeMigrationLog($message);
+			return [];
+		}
+
 		return $data;
 	}
 
@@ -115,6 +123,25 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 		$nc2Upload = $Nc2Upload->findByUploadId($nc2UploadId, null, null, -1);
 
 		return $nc2Upload;
+	}
+
+/**
+ * PDFパスワードをチェックする（NC3ではアップロードできない）
+ */
+	public function checkPdfPassword($data) {
+		//PDF以外はそのまま返却
+		if(!(isset($data['type']) && $data['type'] == 'application/pdf')){
+			return $data;
+		}
+
+		try {
+			$im = new Imagick($data['tmp_name']);
+		} catch(Exception $e) {
+			//PDFパスワード付きの場合はキャッチして空を返却
+			return [];
+		}
+
+		return $data;
 	}
 
 }
