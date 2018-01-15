@@ -70,6 +70,12 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 		}
 
 		$name = $nc2Upload['Nc2Upload']['file_name'];
+		/* NC2のデータにファイル名が無い場合は移行しない */
+		if ($name == "") {
+			$message = __d('nc2_to_nc3', '%s not filename .', 'Nc2Upload upload_id:' . $nc2Upload['Nc2Upload']['upload_id']);
+			$this->writeMigrationLog($message);
+			return $data;
+		}
 
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
 		$tmpName = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'upload_path']) .
