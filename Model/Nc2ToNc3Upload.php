@@ -113,6 +113,16 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 			return [];
 		}
 
+		//事前にUploadFileバリデーションのチェックを行う
+		$UploadFile = ClassRegistry::init('Files.UploadFile');
+		$_tmpData['UploadFile']['real_file_name'] = $data;
+		$UploadFile->set($_tmpData);
+		if(!$UploadFile->validates()){
+			$message = __d('nc2_to_nc3', '%s not in extension list.', 'Nc2Upload:' . $nc2UploadId);
+			$this->writeMigrationLog($message);
+			return [];
+		}
+
 		return $data;
 	}
 
