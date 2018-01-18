@@ -134,9 +134,6 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		return true;
 	}
 
-
-
-
 /**
  * Migrate Site Config.
  *
@@ -144,7 +141,75 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  */
 	private function __migrateSiteConfig() {
 		/* サイト管理情報を移行する */
-		/* コアにマージするかも */
+		$Nc2Config = $this->getNc2Model('config');
+		$query = [
+			'fields' => 'Nc2Config.conf_id, Nc2Config.conf_name, Nc2Config.conf_title, Nc2Config.conf_value',
+			'conditions' => [
+				'OR' => [
+					['Nc2Config.conf_name' => 'sitename'],			//サイト名 [nc2_conf_id:1]
+					['Nc2Config.conf_name' => 'from'],				//送信者メールアドレス [nc2_conf_id:38]
+					['Nc2Config.conf_name' => 'fromname'],			//送信者名 [nc2_conf_id:39]
+					['Nc2Config.conf_name' => 'meta_description'],	//サイトの説明 [nc2_conf_id:47]
+					['Nc2Config.conf_name' => 'meta_keywords'],		//キーワード [nc2_conf_id:48]
+					//['Nc2Config.conf_name' => 'meta_robots'],		//ロボット型検索エンジンへの対応 [nc2_conf_id:49]
+					['Nc2Config.conf_name' => 'meta_author'],		//作成者 [nc2_conf_id:51]
+					//['Nc2Config.conf_name' => 'meta_copyright'],	//著作権表示 [nc2_conf_id:52]
+				],
+			],
+			'order' => ['Nc2Config.conf_id ASC'], 
+		];
+		$nc2Configs = $Nc2Config->find('all', $query);
+		$UpdateSiteSettings = [];
+		foreach($nc2Configs as $key => $val){
+			$Nc3SiteSettingKey = '';
+			$Nc3SiteSettingId = '';
+			switch($val['Nc2Config']['conf_name']){
+				case 'sitename':
+					$Nc3SiteSettingKey = 'App.site_name';
+					$Nc3SiteSettingId = 1;//サイト名（日本語）
+					break;
+				case 'from':
+					$Nc3SiteSettingKey = 'Mail.from';
+					$Nc3SiteSettingId = 72;
+					break;
+				case 'fromname':
+					$Nc3SiteSettingKey = 'Mail.from_name';
+					$Nc3SiteSettingId = 73;//送信者名（日本語）
+					break;
+				case 'meta_description':
+					$Nc3SiteSettingKey = 'Meta.description';
+					$Nc3SiteSettingId = 97;//サイトの説明（日本語）
+					break;
+				case 'meta_keywords':
+					$Nc3SiteSettingKey = 'Meta.keywords';
+					$Nc3SiteSettingId = 95;//キーワード（日本語）
+					break;
+				case 'meta_robots':
+					$Nc3SiteSettingKey = 'Meta.robots';
+					$Nc3SiteSettingId = 21;
+					break;
+				case 'meta_author':
+					$Nc3SiteSettingKey = 'Meta.author';
+					$Nc3SiteSettingId = 91;//作成者（日本語）
+					break;
+				case 'meta_copyright':
+					$Nc3SiteSettingKey = 'Meta.copyright';
+					$Nc3SiteSettingId = 93;//著作権表示（日本語）
+					break;
+			}
+			if ($Nc3SiteSettingKey == '' && $Nc3SiteSettingId == ''){
+				continue;
+			}
+			$UpdateSiteSettings[] = [
+				'id' => $Nc3SiteSettingId,
+				'key' => $Nc3SiteSettingKey,
+				'value' => $val['Nc2Config']['conf_value'],
+			];
+		}
+		$SiteSetting = ClassRegistry::init('SiteSettings.SiteSetting');
+		if (!$SiteSetting->saveMany($UpdateSiteSettings)) {
+			return false;
+		}
 		return true;
 	}
 
