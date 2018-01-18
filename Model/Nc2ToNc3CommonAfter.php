@@ -198,8 +198,45 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  * @return bool
  */
 	private function __changeEmergencyFrame() {
-		/* 緊急連絡のフレーム表示を赤にする */
+
+		//お知らせモジュール titleaccent(赤),titleline_redの場合にもFrameの色を変更する
+		$Nc2Announcement = $this->getNc2Model('announcement');
+		$query = [
+			'fields' => 'Nc2Announcement.block_id',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2Blocks',
+					'table' => 'blocks',
+					'conditions' => 'Nc2Blocks.block_id = Nc2Announcement.block_id',
+				],
+			],
+			'conditions' => [
+				'OR' => [
+					['Nc2Blocks.theme_name' => 'titleaccent'],
+					['Nc2Blocks.theme_name' => 'titleline_red'],
+				],
+			],
+		];
+		$nc2Announcements = $Nc2Announcement->find('all', $query);
+		$UpdateFrames = [];
+		if(count($nc2Announcements) > 0){
+			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+			foreach ($nc2Announcements as $key => $val){
+				$nc3AnnouncementFrame = $Nc2ToNc3Frame->getMap($val['Nc2Announcement']['block_id']);
+				if (!$nc3AnnouncementFrame) {
+					continue;
+				}
+				$UpdateFrames[]['Frame'] = [
+					'id' => $nc3AnnouncementFrame['Frame']['id'],
+					'plugin_key' => 'announcements',
+				];
+			}
+		}
+
 		$Frame = ClassRegistry::init('Frames.Frame');
+		/* 緊急連絡のフレーム表示を赤にする */
 		$query = [
 			'fields' => 'Frame.id, Frame.plugin_key',
 			'recursive' => -1,
@@ -215,7 +252,9 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				'FramesLanguages.name' => '緊急連絡',
 			],
 		];
-		$UpdateFrames = $Frame->find('all', $query);
+		$frames = $Frame->find('all', $query);
+		$UpdateFrames = array_merge($UpdateFrames, $frames);
+
 		foreach ($UpdateFrames as $UpdateFrame) {
 			/* 抽出された全てのフレームをdangerにする */
 			$data['Frame'] = [
