@@ -153,7 +153,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 					['Nc2Config.conf_name' => 'meta_keywords'],		//キーワード [nc2_conf_id:48]
 					//['Nc2Config.conf_name' => 'meta_robots'],		//ロボット型検索エンジンへの対応 [nc2_conf_id:49]
 					['Nc2Config.conf_name' => 'meta_author'],		//作成者 [nc2_conf_id:51]
-					//['Nc2Config.conf_name' => 'meta_copyright'],	//著作権表示 [nc2_conf_id:52]
+					['Nc2Config.conf_name' => 'meta_copyright'],	//著作権表示 [nc2_conf_id:52]
 				],
 			],
 			'order' => ['Nc2Config.conf_id ASC'], 
