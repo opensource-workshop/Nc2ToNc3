@@ -188,6 +188,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
  */
 	private function __getImageSize($nc3UploadFile) {
 		/* @var $UploadFile UploadFile */
+		/*
 		$UploadFile = ClassRegistry::init('Files.UploadFile');
 		$path = $UploadFile->getRealFilePath($nc3UploadFile);
 		list($width, $height) = getimagesize($path);
@@ -201,6 +202,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		if ($width <= 400 && $height <= 400) {
 			return 'medium';
 		}
+		*/
 
 		return '';
 	}
