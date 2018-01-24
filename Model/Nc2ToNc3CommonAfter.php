@@ -160,41 +160,54 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		];
 		$nc2Configs = $Nc2Config->find('all', $query);
 		$UpdateSiteSettings = [];
+		$SiteName  = '';
 		foreach($nc2Configs as $key => $val){
 			$Nc3SiteSettingKey = '';
 			$Nc3SiteSettingId = '';
+			$Nc3SiteSettingValue = '';
 			switch($val['Nc2Config']['conf_name']){
 				case 'sitename':
 					$Nc3SiteSettingKey = 'App.site_name';
 					$Nc3SiteSettingId = 1;//サイト名（日本語）
+					$SiteName = $val['Nc2Config']['conf_value'];
+					$Nc3SiteSettingValue = $SiteName;
 					break;
 				case 'from':
 					$Nc3SiteSettingKey = 'Mail.from';
 					$Nc3SiteSettingId = 72;
+					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
 					break;
 				case 'fromname':
 					$Nc3SiteSettingKey = 'Mail.from_name';
 					$Nc3SiteSettingId = 73;//送信者名（日本語）
+					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
 					break;
 				case 'meta_description':
 					$Nc3SiteSettingKey = 'Meta.description';
 					$Nc3SiteSettingId = 97;//サイトの説明（日本語）
+					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
 					break;
 				case 'meta_keywords':
 					$Nc3SiteSettingKey = 'Meta.keywords';
 					$Nc3SiteSettingId = 95;//キーワード（日本語）
+					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
 					break;
 				case 'meta_robots':
 					$Nc3SiteSettingKey = 'Meta.robots';
 					$Nc3SiteSettingId = 21;
+					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
 					break;
 				case 'meta_author':
 					$Nc3SiteSettingKey = 'Meta.author';
 					$Nc3SiteSettingId = 91;//作成者（日本語）
+					//$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
+					$Nc3SiteSettingValue = $SiteName;
 					break;
 				case 'meta_copyright':
 					$Nc3SiteSettingKey = 'Meta.copyright';
 					$Nc3SiteSettingId = 93;//著作権表示（日本語）
+					//$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
+					$Nc3SiteSettingValue = 'Copyright &copy; 2018 '. $SiteName;
 					break;
 			}
 			if ($Nc3SiteSettingKey == '' && $Nc3SiteSettingId == ''){
@@ -203,9 +216,22 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			$UpdateSiteSettings[] = [
 				'id' => $Nc3SiteSettingId,
 				'key' => $Nc3SiteSettingKey,
-				'value' => $val['Nc2Config']['conf_value'],
+				'value' => $Nc3SiteSettingValue,
 			];
 		}
+		//開始ルームをパブリックに
+		$UpdateSiteSettings[] = [
+				'id' => 4,
+				'key' => 'App.default_start_room',
+				'value' => 1,
+		];
+		//メール設定をPHPmail() に
+		$UpdateSiteSettings[] = [
+				'id' => 76,
+				'key' => 'Mail.transport',
+				'value' => 'phpmail',
+		];
+
 		$SiteSetting = ClassRegistry::init('SiteSettings.SiteSetting');
 		if (!$SiteSetting->saveMany($UpdateSiteSettings)) {
 			return false;
