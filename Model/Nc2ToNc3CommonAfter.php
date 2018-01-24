@@ -207,7 +207,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 					$Nc3SiteSettingKey = 'Meta.copyright';
 					$Nc3SiteSettingId = 93;//著作権表示（日本語）
 					//$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
-					$Nc3SiteSettingValue = 'Copyright &copy; 2018 '. $SiteName;
+					$Nc3SiteSettingValue = 'Copyright © 2018 '. $SiteName;
 					break;
 			}
 			if ($Nc3SiteSettingKey == '' && $Nc3SiteSettingId == ''){
