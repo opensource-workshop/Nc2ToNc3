@@ -47,6 +47,16 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 		// 取得条件がはおそらく正しい。
 		/* @var $Nc2Page AppModel */
 		$Nc2Page = $this->_getNc2Model('pages');
+		/* 取得条件を変更パーマリンクが変更されている可能性があるので（英語サイトは無いものとする）  */
+		$nc2Pages = $Nc2Page->findAllByParentId(
+			'1',
+			'Nc2Page.page_id',
+			['Nc2Page.display_sequence' => 'ASC'],
+			1,
+			null,
+			-1
+		);
+		/*
 		$nc2Pages = $Nc2Page->findAllByParentIdAndPermalink(
 			'1',
 			'',
@@ -56,6 +66,7 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 			null,
 			-1
 		);
+		*/
 		foreach ($nc2Pages as $nc2Page) {
 			$nc2PageId = $nc2Page['Nc2Page']['page_id'];
 			$idMap = [
