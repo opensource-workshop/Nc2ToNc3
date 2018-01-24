@@ -105,7 +105,8 @@ class Nc2ToNc3MenuBehavior extends Nc2ToNc3BaseBehavior {
 
 		if ($nc2PageId == '2') {
 			// グループルームの処理
-			$nc3MenuFrameSetting = $this->__addReadableRoomHiddenData($nc3MenuFrameSetting);
+			/* 以下処理を通すと全て非表示になってしまうので一旦コメントアウト */
+			//$nc3MenuFrameSetting = $this->__addReadableRoomHiddenData($nc3MenuFrameSetting);
 			return $nc3MenuFrameSetting;
 		}
 
