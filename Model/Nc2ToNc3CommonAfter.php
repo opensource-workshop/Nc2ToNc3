@@ -461,10 +461,12 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				]
 			],
 			'conditions' => [
-				'OR' => array(
-					array('Boxes.container_type' => 2), //1:Header, 2:Major, 3:Main, 4:Minor, 5:Footer
-					array('Boxes.container_type' => 4),
-				),
+				//'OR' => array(
+				//	array('Boxes.container_type' => 2), 
+				//	array('Boxes.container_type' => 4),
+				//),
+				//左にあるメニューだけ削除に修正
+				'Boxes.container_type' => 2, //1:Header, 2:Major, 3:Main, 4:Minor, 5:Footer
 				'Frame.id !=' => $defaultMenuFrameId, //デフォルトメニューフレームは削除しない
 				'Frame.plugin_key' => 'menus', //今の所メニューだけ削除
 			],
