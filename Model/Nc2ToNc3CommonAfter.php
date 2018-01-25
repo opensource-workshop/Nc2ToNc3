@@ -649,6 +649,43 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		unset($nc2PageDatas);
 	
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Page Move end.'));
+
+		/* トップページがルームの場合の処理 */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$query = [
+			'fields' => [
+				'nc2_id',
+				'nc3_id',
+			],
+			'conditions' => [
+				'nc3_id' => '4',//TOPページ初期値
+				'model_name' => 'Page',
+			],
+			'recursive' => -1
+		];
+		$idList = $Nc2ToNc3Map->find('list', $query);
+		$result = $Page->existPage( 4, 1, 1);//存在チェック
+		if (!$idList && $result) {
+			$nc3PageTop = [
+				'Page' => [
+					'id' => 4,
+					'room_id' => 1,
+					'parent_id' => 1,
+					'type' => 'bottom',
+				],
+				'Room' => [
+					'id' => 1,
+				]
+			];
+			if(!$Page->saveMove($nc3PageTop)){
+				return false;
+			}
+			// ページ削除
+			$data['Page']['id'] = 4;
+			if(!$Page->deletePage($data)){
+				return false;
+			}
+		}
 		return true;
 	}
 

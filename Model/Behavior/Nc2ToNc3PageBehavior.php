@@ -50,7 +50,7 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 		/* 取得条件を変更パーマリンクが変更されている可能性があるので（英語サイトは無いものとする）  */
 		$nc2Pages = $Nc2Page->findAllByParentId(
 			'1',
-			'Nc2Page.page_id',
+			'Nc2Page.page_id, Nc2Page.room_id',
 			['Nc2Page.display_sequence' => 'ASC'],
 			1,
 			null,
@@ -68,6 +68,10 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 		);
 		*/
 		foreach ($nc2Pages as $nc2Page) {
+			/* トップがルームの場合は返却 */
+			if ($nc2Page['Nc2Page']['page_id'] == $nc2Page['Nc2Page']['room_id']) {
+				return;
+			}
 			$nc2PageId = $nc2Page['Nc2Page']['page_id'];
 			$idMap = [
 				$nc2PageId => $nc3PageId
