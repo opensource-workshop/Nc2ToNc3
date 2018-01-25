@@ -47,13 +47,15 @@ class Nc2ToNc3IframeBehavior extends Nc2ToNc3BaseBehavior {
  */
 	public function generateNc3IframeData(Model $model, $nc2Iframe) {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$nc2BlockId = $nc2Iframe['Nc2Iframe']['block_id'];
-		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
-		if ($frameMap) {
+		$mapIdList = $Nc2ToNc3Map->getMapIdList('Iframe', $nc2BlockId);
+		if ($mapIdList) {
 			// 移行済みの場合
 			return [];
 		}
+		$frameMap = $Nc2ToNc3Frame->getMap($nc2BlockId);
 
 		/* @var $Nc2ToNc3User Nc2ToNc3User */
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
