@@ -564,7 +564,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			) {
 				$nc3RoleRoomUser = [
 					'id' => $nc3RolesRoomsUserId,
-					'delete' => true
+					'delete' => true,
+					'user_id' => $nc3UserId,
+					'room_id' => $nc3Room['Room']['id']
 				];
 				$data[] = $nc3RoleRoomUser;
 				continue;
