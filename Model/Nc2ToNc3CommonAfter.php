@@ -151,7 +151,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 					['Nc2Config.conf_name' => 'fromname'],			//送信者名 [nc2_conf_id:39]
 					['Nc2Config.conf_name' => 'meta_description'],	//サイトの説明 [nc2_conf_id:47]
 					['Nc2Config.conf_name' => 'meta_keywords'],		//キーワード [nc2_conf_id:48]
-					//['Nc2Config.conf_name' => 'meta_robots'],		//ロボット型検索エンジンへの対応 [nc2_conf_id:49]
+					['Nc2Config.conf_name' => 'meta_robots'],		//ロボット型検索エンジンへの対応 [nc2_conf_id:49]
 					['Nc2Config.conf_name' => 'meta_author'],		//作成者 [nc2_conf_id:51]
 					['Nc2Config.conf_name' => 'meta_copyright'],	//著作権表示 [nc2_conf_id:52]
 				],
@@ -193,9 +193,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
 					break;
 				case 'meta_robots':
+					//メタロボットインデックスはnoindex,nofollowに
 					$Nc3SiteSettingKey = 'Meta.robots';
 					$Nc3SiteSettingId = 21;
-					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
+					//$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
+					$Nc3SiteSettingValue = 'noindex,nofollow';
 					break;
 				case 'meta_author':
 					$Nc3SiteSettingKey = 'Meta.author';
