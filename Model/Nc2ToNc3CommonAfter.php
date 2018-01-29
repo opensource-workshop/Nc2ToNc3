@@ -248,6 +248,80 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  */
 	private function __migratePageLayout() {
 		/* ページのレイアウトを移行する */
+		/* 一旦全てのページのレイアウトを右カラムなしにする */
+		$PageContainer = ClassRegistry::init('Pages.PageContainer');
+		$query = [
+			'fields' => 'PageContainer.id',
+			'recursive' => -1,
+			'conditions' => [
+				'PageContainer.container_type' => 4, //Minor
+			],
+		];
+		$pageContainers = $PageContainer->find('all', $query);
+		
+		foreach($pageContainers as $val){
+			$updated = [
+				'PageContainer.is_published' => 0,
+			];
+			$conditions = [
+				'PageContainer.id' => $val['PageContainer']['id']
+			];
+			$result = $PageContainer->updateAll($updated, $conditions);
+		}
+
+		/* Nc2の状態を取得する */
+		$Nc2PagesStyle = $this->getNc2Model('pages_style');
+		$query = [
+			'fields' => 'Nc2PagesStyle.set_page_id,Nc2PagesStyle.header_flag,Nc2PagesStyle.footer_flag,Nc2PagesStyle.leftcolumn_flag,Nc2PagesStyle.rightcolumn_flag',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2Pages',
+					'table' => 'pages',
+					'conditions' => 'Nc2Pages.page_id = Nc2PagesStyle.set_page_id',
+				]
+			],
+			'conditions' => [
+				'Nc2Pages.private_flag' => 0, //プライベートは除く
+			],
+		];
+		$nc2PagesStyle = $Nc2PagesStyle->find('all', $query);
+
+		/* 条件にあったページスタイルをセットする */
+		$arrPageIds = [];
+		$pageIds = [];
+		foreach($nc2PagesStyle as $key => $val){
+			$arrPageIds[] = $val['Nc2PagesStyle']['set_page_id'];
+			$pageIds[$val['Nc2PagesStyle']['set_page_id']] = [
+				'1' => $val['Nc2PagesStyle']['header_flag'],
+				'2' => $val['Nc2PagesStyle']['leftcolumn_flag'],
+				'4' => $val['Nc2PagesStyle']['rightcolumn_flag'],
+				'5' => $val['Nc2PagesStyle']['footer_flag'],
+			];
+		}
+
+		/* ページスタイルを変更(追記)する */
+		if(count($arrPageIds) > 0){
+			$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
+			$pageMap = $Nc2ToNc3Page->getMap($arrPageIds);
+			$nc3UpdatePageContainers = [];
+			foreach($pageMap as $nc2Id => $models){
+				$pageId = $models['Page']['id'];
+				//CakeLog::debug(print_r($models['Page']['permalink'] , true));
+				foreach($pageIds[$nc2Id] as $containerType => $isPublished){
+					$updated = [
+						'PageContainer.is_published' => $isPublished,
+					];
+					$conditions = [
+						'PageContainer.is_configured' => false,
+						'PageContainer.page_id' => $pageId,
+						'PageContainer.container_type' => $containerType,
+					];
+					$result = $PageContainer->updateAll($updated, $conditions);
+				}
+			}
+		}
 		return true;
 	}
 
