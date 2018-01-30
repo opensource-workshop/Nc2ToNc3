@@ -85,6 +85,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 			'conditions' => [
 				'Nc2Block.module_id !=' => '0',
 				'Nc2Block.action_name !=' => 'login_view_main_init',//ログインモジュールは移行しないので追加 add by horiguchi@osws
+				/*
 				'or' => [
 					// デフォルトのNc2Blockデータ（お知らせ３つ）、メニュー、imagineは移行しない方が良いと思う。
 					'Nc2Block.block_id >' => '5',
@@ -92,6 +93,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 					'Nc2Block.block_id' => '1',
 					'Nc2Block.block_id' => '3',
 				]
+				*/
 			],
 			// Nc2Block.parent_idから再帰処理するのと同じ結果になると思う。
 			// Frame::saveFrame で　追加時は一番上に配置する処理があるため、どうするのが良いのか？
