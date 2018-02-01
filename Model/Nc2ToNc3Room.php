@@ -437,6 +437,11 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$data['RoomRolePermission'] = $this->getNc3DefaultRolePermission();
 		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
 
+		// ルームのパーマリンクを追加（日本語）
+		if(isset($data['RoomsLanguage'][0]['name'])){
+			$data['Page']['permalink'] = $data['RoomsLanguage'][0]['name'];
+		}
+
 		return $data;
 	}
 
