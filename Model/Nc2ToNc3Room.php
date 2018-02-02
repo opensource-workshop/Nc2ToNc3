@@ -438,8 +438,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
 
 		// ルームのパーマリンクを追加（日本語）
-		if(isset($data['RoomsLanguage'][0]) && $data['Room']['page_id_top'] != '' && $data['Room']['parent_id'] != '1'){
-			$data['Page']['permalink'] = $data['RoomsLanguage'][0]['name'];
+		if(isset($data['RoomsLanguage'][0])){
+			//パーマリンクバリデーションチェック(通過したルームのみ移行)
+			$Page = ClassRegistry::init('Pages.Page');
+			if($Page->validPermalink([$data['RoomsLanguage'][0]['name']])){
+				$data['Page']['permalink'] = $data['RoomsLanguage'][0]['name'];
+			}
 		}
 
 		return $data;
