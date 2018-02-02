@@ -356,11 +356,8 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 			'recursive' => -1
 		];
 		$nc3EventCount = $CalendarEvent->find('count', $query);
-		if ($nc3EventCount > 0) {
+		if ($nc3EventCount) {
 			$nc3Event = $CalendarEvent->getEventById($nc3EventId);
-		}else{
-			// Eventが無い場合を考慮
-			return false;
 		}
 
 		// 更新処理でしか使われてなさげだが、同じような処理にしとく
