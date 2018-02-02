@@ -439,10 +439,37 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 
 		// ルームのパーマリンクを追加（日本語）
 		if(isset($data['RoomsLanguage'][0])){
+			/* バリデーションエラー回避のために文字列置換する */
+			$replaceList = [
+				'%' => '％',
+				' ' => '　',
+				'#' => '＃',
+				'<' => '＜',
+				'>' => '＞',
+				'+' => '＋',
+				'&' => '＆',
+				'?' => '？',
+				'=' => '＝',
+				'~' => '～',
+				':' => '：',
+				';' => '；',
+				',' => '，',
+				'$' => '＄',
+				'@' => '＠',
+				'/' => '／',
+				']' => '］',
+				'[' => '［',
+				'(' => '（',
+				')' => '）',
+				'*' => '＊',
+			];
+			$search = array_keys($replaceList);
+			$replace = array_values($replaceList);
+			$permalink = str_replace($search, $replace, trim($data['RoomsLanguage'][0]['name']));
 			//パーマリンクバリデーションチェック(通過したルームのみ移行)
 			$Page = ClassRegistry::init('Pages.Page');
-			if($Page->validPermalink([$data['RoomsLanguage'][0]['name']])){
-				$data['Page']['permalink'] = $data['RoomsLanguage'][0]['name'];
+			if($Page->validPermalink([$permalink])){
+				$data['Page']['permalink'] = $permalink;
 			}
 		}
 
