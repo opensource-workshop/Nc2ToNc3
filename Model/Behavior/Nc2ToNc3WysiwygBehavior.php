@@ -137,7 +137,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		$mapIdList = $Nc2ToNc3Map->getMapIdList('UploadFile', $nc2UploadId);
 		if ($mapIdList) {
 			/* アップロードファイルの重複ファイルを検知する為にログを出力 */
-			$this->writeMigrationLog(__d('nc2_to_nc3', 'Exist Fire. Nc2UploadId : '.$nc2UploadId));
+			$this->_writeMigrationLog(__d('nc2_to_nc3', 'Exist Fire. Nc2UploadId : '.$nc2UploadId));
 			return $UploadFile->findById($mapIdList[$nc2UploadId], null, null, -1);
 		}
 
