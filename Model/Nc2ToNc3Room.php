@@ -468,6 +468,16 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			$permalink = str_replace($search, $replace, trim($data['RoomsLanguage'][0]['name']));
 			//パーマリンクバリデーションチェック(通過したルームのみ移行)
 			$Page = ClassRegistry::init('Pages.Page');
+			//パーマリンクの重複チェック
+			$setData['Page'] = [
+								'slug' => '',
+								'permalink' => $permalink,
+								];
+			$Page->set($setData);
+			if(!$Page->validates()){
+				//重複した場合はランダムIDを付与
+				$permalink = uniqid($permalink."_");
+			}
 			if($Page->validPermalink([$permalink])){
 				$data['Page']['permalink'] = $permalink;
 			}
