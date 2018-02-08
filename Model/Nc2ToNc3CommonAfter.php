@@ -248,8 +248,8 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 					//メタロボットインデックスはnoindex,nofollowに
 					$Nc3SiteSettingKey = 'Meta.robots';
 					$Nc3SiteSettingId = 21;
-					//$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
-					$Nc3SiteSettingValue = 'noindex,nofollow';
+					$Nc3SiteSettingValue = $val['Nc2Config']['conf_value'];
+					//$Nc3SiteSettingValue = 'noindex,nofollow';
 					break;
 				case 'meta_author':
 					$Nc3SiteSettingKey = 'Meta.author';
