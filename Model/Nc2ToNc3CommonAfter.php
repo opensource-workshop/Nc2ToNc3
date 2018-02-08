@@ -110,6 +110,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* キャビネットのダウンロード数を移行する */
+		if (!$this->__migrateCabinetFileDownloadNum()) {
+			return false;
+		}
+
 		/* プライベートスペースの利用を不可にする(一般の場合) */
 		if (!$this->__changeUserRoleSetting()) {
 			return false;
@@ -133,6 +138,53 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 
 		return true;
 	}
+
+/**
+ * Migrate Cabinet File Download Num.
+ *
+ * @return bool
+ */
+	private function __migrateCabinetFileDownloadNum() {
+		$Nc2CabinetFile = $this->getNc2Model('cabinet_file');
+		$query = [
+			'fields' => 'Nc2CabinetFile.file_id, Nc2CabinetFile.download_num',
+			'conditions' => [],
+			'order' => ['Nc2CabinetFile.file_id ASC'], 
+		];
+		$nc2CabinetFiles = $Nc2CabinetFile->find('all', $query);
+
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$CabinetFile = ClassRegistry::init('Cabinets.CabinetFile');
+		$UploadFile = ClassRegistry::init('Files.UploadFile');
+		foreach($nc2CabinetFiles as $key => $val){
+			$mapIdList = $Nc2ToNc3Map->getMapIdList('CabinetFile', $val['Nc2CabinetFile']['file_id']);
+			$nc2DownloadNum = $val['Nc2CabinetFile']['download_num'];
+			if ($mapIdList) {
+				reset($mapIdList);
+				$nc3Id = current($mapIdList);
+				$query = [
+					'fields' => 'CabinetFile.id, CabinetFile.key',
+					'conditions' => [
+						'CabinetFile.id' => $nc3Id,
+						'CabinetFile.is_folder !=' => 1,//フォルダー以外を取得
+					],
+				];
+				$nc3CabinetFile = $CabinetFile->find('first', $query);
+				if($nc3CabinetFile){
+					$data = [
+							'id' => $nc3CabinetFile['UploadFile']['file']['id'],
+							'download_count' => $nc2DownloadNum,
+							'total_download_count' => $nc2DownloadNum,
+					];
+					if (!$UploadFile->save($data, array('validate' => false,'callbacks' => false))) {
+						return false;
+					}
+				}
+			}
+		}
+		return true;
+	}
+
 
 /**
  * Migrate Site Config.
