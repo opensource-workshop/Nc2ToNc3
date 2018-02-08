@@ -343,12 +343,36 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  * @return bool
  */
 	private function __changeUserRoleSetting() {
-		/* プライベートスペースの利用を不可にする(一般の場合) */
 		$UserRoleSetting = ClassRegistry::init('UserRoles.UserRoleSetting');
+		/* プライベートスペースの利用を不可にする(一般の場合) */
 		$data['UserRoleSetting'] = [
 			'id' => 3, //3
 			'role_key' => 'common_user',
 			'origin_role_key' => 'common_user',
+			'use_private_room' => 0,
+		];
+		if (! $UserRoleSetting->saveUserRoleSetting($data)) {
+			//エラー処理
+			return false;
+		}
+
+		/* プライベートスペースの利用を不可にする(サイト管理者の場合) */
+		$data['UserRoleSetting'] = [
+			'id' => 2, //2
+			'role_key' => 'administrator',
+			'origin_role_key' => 'administrator',
+			'use_private_room' => 0,
+		];
+		if (! $UserRoleSetting->saveUserRoleSetting($data)) {
+			//エラー処理
+			return false;
+		}
+
+		/* プライベートスペースの利用を不可にする(システム管理者の場合) */
+		$data['UserRoleSetting'] = [
+			'id' => 1, //1
+			'role_key' => 'system_administrator',
+			'origin_role_key' => 'system_administrator',
 			'use_private_room' => 0,
 		];
 		if (! $UserRoleSetting->saveUserRoleSetting($data)) {
