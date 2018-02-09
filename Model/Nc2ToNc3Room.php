@@ -470,7 +470,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			$Page = ClassRegistry::init('Pages.Page');
 			//パーマリンクの重複チェック
 			$setData['Page'] = [
-								'slug' => '',
+								'slug' => $permalink,
 								'permalink' => $permalink,
 								];
 			$Page->set($setData);
