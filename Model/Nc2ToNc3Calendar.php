@@ -380,7 +380,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		$CalendarActionPlan->set($nc3ActionPlan);
 		if(!$CalendarActionPlan->validates()){
 			$message = __d('nc2_to_nc3', '%s does not migration. validation error.', $this->getLogArgument($nc2CalendarPlan));
-			//CakeLog::debug(print_r($CalendarActionPlan->validationErrors, true));
+			CakeLog::debug(print_r($CalendarActionPlan->validationErrors, true));
 			var_export($CalendarActionPlan->validationErrors, true);
 			$this->writeMigrationLog($message);
 			return false;
