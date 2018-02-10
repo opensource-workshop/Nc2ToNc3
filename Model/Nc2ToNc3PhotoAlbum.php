@@ -213,14 +213,25 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				if (!$nc2PhotoalbumBlock) {
 					$PhotoAlbum->rollback();
 					continue;
-				}
-				$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
-				/* エラーハンドリングを追加 */
-				if (!$frameMap) {
-					$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2PhotoalbumBlock));
-					$this->writeMigrationLog($message);
-					$PhotoAlbum->rollback();
-					continue;
+					/*
+					//ブロックなしデータを移行したい場合は下記を記載し再実行する
+					//$PhotoAlbum->rollback();
+					//continue;
+					$frameMap['Frame']= [
+						'id' => ,
+						'room_id' => ,
+						'key' => '',
+					];
+					*/
+				}else{
+					$frameMap = $Nc2ToNc3Frame->getMap($nc2PhotoalbumBlock['Nc2PhotoalbumBlock']['block_id']);
+					/* エラーハンドリングを追加 */
+					if (!$frameMap) {
+						$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2PhotoalbumBlock));
+						$this->writeMigrationLog($message);
+						$PhotoAlbum->rollback();
+						continue;
+					}
 				}
 
 				$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];
