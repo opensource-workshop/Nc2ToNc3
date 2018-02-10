@@ -377,6 +377,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/Behavior/CalendarPlanGenerationBehavior.php#L276-L283
 		$nc3PivateRoomId = null;
 
+		/* 事前バリデーション返却処理をコメントアウト
 		$CalendarActionPlan->set($nc3ActionPlan);
 		if(!$CalendarActionPlan->validates()){
 			$message = __d('nc2_to_nc3', '%s does not migration. validation error.', $this->getLogArgument($nc2CalendarPlan));
@@ -385,6 +386,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 			$this->writeMigrationLog($message);
 			return false;
 		}
+		*/
 		
 		$nc3EventId = $CalendarActionPlan->saveCalendarPlan(
 			$nc3ActionPlan,
