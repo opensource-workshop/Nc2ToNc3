@@ -94,14 +94,8 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		}
 
 		/* ページのレイアウトを移行する */
-		/* コアにマージするかも */
 		if (!$this->__migratePageLayout()) {
 			return false;
-		}else{
-			/* 右、左、ヘッダー、なしレイアウトの場合にレイアウト含めたデザインを調整する */
-			if (!$this->__adjustMainOnlyLayout()) {
-				return false;
-			}
 		}
 
 		/* サイト管理情報を移行する */
@@ -119,6 +113,13 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		if (!$this->__changeUserRoleSetting()) {
 			return false;
 		}
+
+		/* ポータル用でルームごとに各校が管理されていた場合の処理 */
+		if (!$this->__adjustMainOnlyLayout()) {
+			return false;
+		}
+
+
 
 		/* ルームを新テーマにする 今は不要 */
 		/*
@@ -384,8 +385,99 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  * @return bool
  */
 	private function __adjustMainOnlyLayout() {
-		/*__migratePageLayoutを実行後に実行 */
-		/* 右、左、ヘッダー、なしレイアウトの場合にレイアウト含めたデザインを調整する */
+
+		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
+		$nc2BaseUrl = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'base_url']);
+		//自治体ポータルでない場合には正常終了
+		if(!preg_match('/.*?\.gr.*?\.ed\.jp$/', $nc2BaseUrl, $m)) {
+			return true;
+		}
+		
+		//TODO 左か下かの判断
+		$majorLayoutFlg = false;
+		if(false) {
+			$majorLayoutFlg = true;
+		}
+
+		//カレントルームを取得する
+		$Page = ClassRegistry::init('Pages.Page');
+		$query = [
+			'recursive' => -1,
+			'conditions' => [
+				['Page.root_id' => '1'],
+				['Page.parent_id' => '1'],
+				['Page.room_id !=' => '1'],
+			],
+			'order' => ['Page.id ASC'], 
+		];
+		$Nc3CurrentRooms = $Page->find('all', $query);
+
+		$strLayout = '1_0_0_1';		//1_0_0_1 上下
+		if($majorLayoutFlg){
+			$strLayout = '1_1_0_0';	//1_1_0_0 上左
+		}
+		foreach($Nc3CurrentRooms as $val){
+			//ページ設定（上下or上左）にする
+			if(!$this->setPagesLayout($val, $strLayout)) return false;
+
+			//ヘッダーをルーム共通にする
+			//contentType=1//ヘッダー
+			$RoomBoxId = $this->setBoxesDisplay($val, 1);
+			if(!$RoomBoxId) return false;
+
+			//ヘッダーにメニューフレームを配置する
+			$FrameKey = $this->addFramesToBoxId($val, $RoomBoxId, 'menus');
+			if(!$FrameKey) return false;
+
+			//ヘッダーのメニューフレームのテンプレートをheader_flatにする
+			if(!$this->changeMenuFrameSettingDisplayType($FrameKey, 'header_flat')) return false;
+
+			//ヘッダーにお知らせフレームを配置する
+			$FrameKey = $this->addFramesToBoxId($val, $RoomBoxId, 'announcements');
+			if(!$FrameKey) return false;
+
+			//メインのメニュー削除
+			if(!$this->deleteMainMenuFrame($val)) return false;
+
+			//フッター or 左カラムをルーム共通にする
+			//contentType=2 or 5//ヘッダー
+			$contentType = 2;
+			if (!$majorLayoutFlg){
+				$contentType = 5;
+			}
+			$RoomBoxId = $this->setBoxesDisplay($val, $contentType);
+			if(!$RoomBoxId) return false;
+
+			//後から追加したものが上にくるので最初にカウンター
+			//フッター or 左カラムにアクセスカウンターフレームを配置する(あったやつだけ)
+			$FrameKey = $this->moveAccesscounter($val, $RoomBoxId);
+
+			//メインエリアの「学校の連絡先」お知らせフレームを削除し、選択されていたブロックをフッター or 左カラムのお知らせに登録する
+			$FramesLanguageName = '学校の連絡先';
+			$MainFramesBlockId = $this->deleteFramesAndReturnVal($val, $FramesLanguageName);
+			if($MainFramesBlockId) {
+				//フッター or 左カラムにお知らせフレームを配置する
+				$val['Frame']['block_id'] = $MainFramesBlockId;
+				$val['Frame']['header_type'] = 'default';
+				$val['FramesLanguage']['name'] = $FramesLanguageName;
+				$FrameKey = $this->addFramesToBoxId($val, $RoomBoxId, 'announcements');
+				if(!$FrameKey) return false;
+			}
+
+			//左カラムありの場合は左にメニューを追加する
+			if ($majorLayoutFlg){
+				unset($val['Frame']['block_id']);
+				unset($val['Frame']['header_type']);
+				unset($val['FramesLanguage']['name']);
+				$FrameKey = $this->addFramesToBoxId($val, $RoomBoxId, 'menus');
+				//左メニューフレームのテンプレートをminor_and_firstにする
+				if(!$this->changeMenuFrameSettingDisplayType($FrameKey, 'minor_and_first')) return false;
+			}
+
+		}
+
+		//CakeLog::debug(print_r($Nc3CurrentRooms, true));
+
 		return true;
 	}
 
