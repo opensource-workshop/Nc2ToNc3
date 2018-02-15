@@ -48,7 +48,10 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
  * @var array
  * @link http://book.cakephp.org/2.0/en/models/behaviors.html#using-behaviors
  */
-	public $actsAs = ['Nc2ToNc3.Nc2ToNc3CommonAfter'];
+	public $actsAs = [
+		'Nc2ToNc3.Nc2ToNc3CommonAfter',
+		'Nc2ToNc3.Nc2ToNc3Wysiwyg',
+	];
 
 /**
  * Migration method.
@@ -395,7 +398,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		
 		//TODO 左か下かの判断
 		$majorLayoutFlg = false;
-		if(false) {
+		if(true) {
 			$majorLayoutFlg = true;
 		}
 
@@ -452,6 +455,17 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			//フッター or 左カラムにアクセスカウンターフレームを配置する(あったやつだけ)
 			$FrameKey = $this->moveAccesscounter($val, $RoomBoxId);
 
+//TODO
+			//QRコード
+			$val['Frame']['header_type'] = 'default';
+			$val['FramesLanguage']['name'] = 'QRコード';
+			$FrameKey = $this->addFramesToBoxId($val, $RoomBoxId, 'announcements');
+			if(!$FrameKey) return false;
+			unset($val['Frame']['header_type']);
+			unset($val['FramesLanguage']['name']);
+			//お知らせにコンテンツをセット
+			if(!$this->setAnnouncementBlock($val, $FrameKey)) return false;
+
 			//メインエリアの「学校の連絡先」お知らせフレームを削除し、選択されていたブロックをフッター or 左カラムのお知らせに登録する
 			$FramesLanguageName = '学校の連絡先';
 			$MainFramesBlockId = $this->deleteFramesAndReturnVal($val, $FramesLanguageName);
@@ -462,13 +476,13 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				$val['FramesLanguage']['name'] = $FramesLanguageName;
 				$FrameKey = $this->addFramesToBoxId($val, $RoomBoxId, 'announcements');
 				if(!$FrameKey) return false;
+				unset($val['Frame']['block_id']);
+				unset($val['Frame']['header_type']);
+				unset($val['FramesLanguage']['name']);
 			}
 
 			//左カラムありの場合は左にメニューを追加する
 			if ($majorLayoutFlg){
-				unset($val['Frame']['block_id']);
-				unset($val['Frame']['header_type']);
-				unset($val['FramesLanguage']['name']);
 				$FrameKey = $this->addFramesToBoxId($val, $RoomBoxId, 'menus');
 				//左メニューフレームのテンプレートをminor_and_firstにする
 				if(!$this->changeMenuFrameSettingDisplayType($FrameKey, 'minor_and_first')) return false;

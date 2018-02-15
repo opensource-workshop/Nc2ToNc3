@@ -154,20 +154,33 @@ class Nc2ToNc3CommonAfterBehavior extends Nc2ToNc3BaseBehavior {
 		if(Hash::get($Data, 'Frame.header_type')){
 			$updateData['Frame']['header_type'] = Hash::get($Data, 'Frame.header_type');
 		}
+		$updateData['Frame']['block_id'] = null;
 		if(Hash::get($Data, 'Frame.block_id')){
 			$updateData['Frame']['block_id'] = Hash::get($Data, 'Frame.block_id');
 		}
-		$updateData['FramesLanguage']['name'] = false;
+		//$updateData['FramesLanguage']['name'] = false;
+		$updateData['FramesLanguage']['name'] = '';
 		if(Hash::get($Data, 'FramesLanguage.name')){
 			$updateData['FramesLanguage']['name'] = Hash::get($Data, 'FramesLanguage.name');
 		}
 
 		$query = [
-					'conditions' => [
+				'recursive' => -1,
+				'conditions' => [
 						'Frame.room_id' =>  $RoomId,
 						'Frame.box_id' =>  $BoxId,
 						'Frame.plugin_key' =>  $PluginKey,
+						'Frame.is_deleted' =>  0,
+						'FramesLanguage.name' => $updateData['FramesLanguage']['name'],
+				],
+				'joins' => [
+					[
+						'type' => 'INNER',
+						'alias' => 'FramesLanguage',
+						'table' => 'frames_languages',
+						'conditions' => 'FramesLanguage.frame_id = Frame.id',
 					],
+				],
 		];
 		//最初だけセットする
 		$findData = $Frame->find('first', $query);
@@ -203,6 +216,57 @@ class Nc2ToNc3CommonAfterBehavior extends Nc2ToNc3BaseBehavior {
 		if (!$MenuFrameSetting->save($data, array('validate' => false,'callbacks' => false))) {
 			return false;
 		}
+
+		return true;
+	}
+
+	public function setAnnouncementBlock(Model $model, $Data, $FrameKey) {
+		$Announcement = ClassRegistry::init('Announcements.Announcement');
+		$Block = ClassRegistry::init('Blocks.Block');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		
+		$RoomId = $Data['Page']['room_id'];
+		$Frame = ClassRegistry::init('Frames.Frame');
+		$query = [
+			'fields' => 'Frame.id',
+			'recursive' => -1,
+			'conditions' => [
+				'Frame.room_id' => $RoomId,
+				'Frame.key' => $FrameKey,
+				'Frame.plugin_key' => 'announcements',
+			],
+		];
+		$findFrames = $Frame->find('first', $query);
+		if(!$findFrames) return false;
+		$FrameId = Hash::get($findFrames, 'Frame.id');
+
+		//コンテンツを作成
+		$chl = Router::url('/', true). $Data['Page']['permalink'];
+		$src = 'https://chart.apis.google.com/chart?cht=qr&amp;chs=150x150&amp;chl='.$chl;
+		$Content = '<p style="text-align: center;"><img src="'. $src. '" alt="'. $chl. '" /></p>';
+
+		$data = [
+				'Announcement' => [
+					'status' => '1',
+					'content' => $model->convertWYSIWYG($Content),
+				],
+				'Block' => [
+					'room_id' => $RoomId,
+					'plugin_key' => 'announcements'
+				],
+				'Frame' => [
+					'id' => $FrameId
+				],
+		];
+
+		Current::write('Permission.content_publishable.value', 1);
+		Current::write('Plugin.key', 'announcements');
+		Current::write('Room.id', $RoomId);
+		$Announcement->create();
+		$Block->create();
+		$BlocksLanguage->create();
+
+		if (!$Announcement->saveAnnouncement($data)) return false;
 
 		return true;
 	}
