@@ -97,6 +97,21 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		/* @var $Nc2CalendarPlan AppModel */
 		$Nc2CalendarPlan = $this->getNc2Model('calendar_plan');
 		$query = [
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2CalendarBlock',
+					'table' => 'calendar_block',
+					'conditions' => 'Nc2CalendarPlan.room_id = Nc2CalendarBlock.room_id',
+				],
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2Block',
+					'table' => 'blocks',
+					'conditions' => 'Nc2CalendarBlock.block_id = Nc2Block.block_id',
+				],
+			],
 			'order' => [
 				'Nc2CalendarPlan.calendar_id',
 			],

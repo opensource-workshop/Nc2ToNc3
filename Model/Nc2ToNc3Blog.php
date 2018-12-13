@@ -60,7 +60,19 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2Blog AppModel */
 		$Nc2Journal = $this->getNc2Model('journal');
-		$nc2Journals = $Nc2Journal->find('all');
+		$Nc2Journal = $this->getNc2Model('journal');
+		$query = [
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2JournalBlock',
+					'table' => 'journal_block',
+					'conditions' => 'Nc2Journal.journal_id = Nc2JournalBlock.journal_id',
+				],
+			],
+		];
+		$nc2Journals = $Nc2Journal->find('all', $query);
 		if (!$this->__saveNc3BlogFromNc2($nc2Journals)) {
 			return false;
 		}

@@ -69,7 +69,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2Photoalbum AppModel */
 		$Nc2PhotoalbumAlbum = $this->getNc2Model('photoalbum_album');
-		$nc2PhotoalbumAlbums = $Nc2PhotoalbumAlbum->find('all');
+		$nc2PhotoalbumAlbums = $Nc2PhotoalbumAlbum->find('all', null, ['album_id' => 'DESC']);
 		if (!$this->__savePhotoAlbumFromNc2($nc2PhotoalbumAlbums)) {
 			return false;
 		}
@@ -235,7 +235,8 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				}
 
 				$nc2AlbumId = $nc2PhotoalbumAlbum['Nc2PhotoalbumAlbum']['album_id'];
-				$nc2Photos = $Nc2PhotoalbumPhoto->findAllByAlbumId($nc2AlbumId, null, ['photo_sequence' => 'ASC'], -1);
+				//$nc2Photos = $Nc2PhotoalbumPhoto->findAllByAlbumId($nc2AlbumId, null, ['photo_sequence' => 'DESC'], -1);
+				$nc2Photos = $Nc2PhotoalbumPhoto->findAllByAlbumId($nc2AlbumId, null, ['photo_id' => 'DESC'], -1);
 				if (count($nc2Photos) === 0) {
 					$message = $this->getLogArgument($nc2Photos);
 					$this->writeMigrationLog($message);
