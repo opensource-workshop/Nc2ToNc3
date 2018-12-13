@@ -72,19 +72,25 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		}
 
 		/* 右、左にあるメニューを削除する */
+		/*
 		if (!$this->__deleteMenuFrame()) {
 			return false;
 		}
+		*/
 
 		/* デフォルトメニューのフレーム値をnoneにする */
+		/*
 		if (!$this->__changeDefaultMenuFrame()) {
 			return false;
 		}
+		*/
 
 		/* ヘッダーエリアにあるモジュールのフレーム値をnoneにする */
+		/*
 		if (!$this->__changeHeaderAllFrame()) {
 			return false;
 		}
+		*/
 
 		/* NC2時にグループで囲われていたモジュールを並び替える */
 		if (!$this->__changeGroupBlockSort()) {
@@ -792,6 +798,23 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			'block_id' => 1,
 			'weight' => NULL,//TODO 一番下だからNULLで良い？
 			'box_id' => 16,//デフォルトメインエリアのbox_idは18
+		];
+		if (! $Frame->saveFrame($data)) {
+			//エラー処理
+			return false;
+		}
+
+
+		/* デフォルトメニューフレームID*/
+		$defaultMenuFrameId = 2;
+
+		$data['Frame'] = [
+			'id' => $defaultMenuFrameId,
+			'plugin_key' => 'menus',
+			'is_deleted' => true,
+			'block_id' => 1,
+			'weight' => NULL,//TODO 一番下だからNULLで良い？
+			'box_id' => 18,
 		];
 		if (! $Frame->saveFrame($data)) {
 			//エラー処理
