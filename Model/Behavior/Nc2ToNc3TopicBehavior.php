@@ -69,8 +69,12 @@ class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {
 		$nc3PluginKeys = $Nc2ToNc3Plugin->getMap($nc2DisplayModules);
 
 		$nc3FramePluginKey = [];
+		$nc3Plugin = [];
 		foreach ($nc3PluginKeys as $nc3PluginKey) {
 			$nc3FramePluginKey[] = $nc3PluginKey['Plugin']['key'];
+			$nc3Plugin[] = [
+							'key' => $nc3PluginKey['Plugin']['key']
+							];
 		}
 
 		$nc3ChoicesDisplayDay = array(1, 3, 7, 14, 30);
@@ -124,8 +128,9 @@ class Nc2ToNc3TopicBehavior extends Nc2ToNc3BaseBehavior {
 			],
 			'TopicFramesPlugin' => [
 				'frame_key' => $frameMap['Frame']['key'],
-				'plugin_key' => $nc3FramePluginKey
-			]
+				'plugin_key' => $nc3FramePluginKey,
+			],
+			'Plugin' => $nc3Plugin
 		];
 
 		return $data;
