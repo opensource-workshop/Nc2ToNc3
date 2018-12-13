@@ -29,11 +29,13 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		$searches = [];
 		$replaces = [];
 
+		/* 順序入れ替え __getStrReplaceArgumentsOfBaseUrlLink の後に実行
 		$strReplaceArguments = $this->__getStrReplaceArgumentsOfDownloadAction($content);
 		if ($strReplaceArguments) {
 			$searches = array_merge($searches, $strReplaceArguments[0]);
 			$replaces = array_merge($replaces, $strReplaceArguments[1]);
 		}
+		*/
 
 		$strReplaceArguments = $this->__getStrReplaceArgumentsOfTitleIcon($content);
 		if ($strReplaceArguments) {
@@ -42,6 +44,12 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		}
 
 		$strReplaceArguments = $this->__getStrReplaceArgumentsOfBaseUrlLink($content);
+		if ($strReplaceArguments) {
+			$searches = array_merge($searches, $strReplaceArguments[0]);
+			$replaces = array_merge($replaces, $strReplaceArguments[1]);
+		}
+
+		$strReplaceArguments = $this->__getStrReplaceArgumentsOfDownloadAction($content);
 		if ($strReplaceArguments) {
 			$searches = array_merge($searches, $strReplaceArguments[0]);
 			$replaces = array_merge($replaces, $strReplaceArguments[1]);
@@ -81,6 +89,10 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		/* @var $Nc2ToNc3 Nc2ToNc3 */
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
 		$nc2BaseUrl = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'base_url']);
+		$sub_dir = "";
+		if(preg_match("/.*?\:\/\/.*?\/(.*$)/",$nc2BaseUrl, $m)){
+			$sub_dir = $m[1]."/";
+		}
 		$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
 
 		// save〇〇に渡すデータを、WysiwygBehavior::REPLACE_BASE_URL（{{__BASE_URL__}}）にすると、
@@ -88,10 +100,11 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		// なので、WysiwygBehavior::beforeSave で置換される文字列にしとく
 		// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/Model/Behavior/WysiwygBehavior.php#L83
 		//$replace = WysiwygBehavior::REPLACE_BASE_URL . './?action=common_download_main&upload_id=';
-		$replaceUrl = Router::url('/', true);
+		$replaceUrl = Router::url('/', true). $sub_dir;
 
 		// @see https://regexper.com/#%2F(src%7Chref)%3D%22(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(%5C%3F%7Cindex%5C.php%5C%3F)action%3Dcommon_download_main%26(%3F%3Aamp%3B)%3Fupload_id%3D(%5Cd%2B)%22%2F
-		$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		// BaseURLのディレクトリ型対応追加 置換順序の変更により、hrefは削除
+		$pattern = '/(src)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
 			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[4]);
@@ -277,11 +290,15 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
 
 		$nc2BaseUrl = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'base_url']);
+		$sub_dir = "";
+		if(preg_match("/.*?\:\/\/.*?\/(.*$)/",$nc2BaseUrl, $m)){
+			$sub_dir = $m[1]."/";
+		}
 		$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
-		$replaceBaseUrl = Router::url('/', true);
+		$replaceBaseUrl = Router::url('/', true). $sub_dir;
 
 		// @see https://regexper.com/#%2Fhref%3D(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(.*%3F)%22%2F
-		$pattern = '/href="(' . $nc2BaseUrl . '\/|\.\/)(.*?)"/';
+		$pattern = '/href="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(.*?)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
 			$replacePath = $match[2];
