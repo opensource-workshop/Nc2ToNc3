@@ -262,6 +262,29 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			'Nc2ToNc3Reservation',
 			'Nc2ToNc3Multidatabase',
 		];
+
+		// Nc2のテーブル存在チェック
+		$checkNc2ModelNames = [
+			//以下に対応するkeyとNc2のテーブル名をセットする
+			'Nc2ToNc3Bbs'=>'bbs',
+			'Nc2ToNc3Iframe'=>'iframe',
+			'Nc2ToNc3Questionnaire'=>'questionnaire',
+			'Nc2ToNc3Quiz'=>'questionnaire',
+			'Nc2ToNc3Task'=>'todo',
+			'Nc2ToNc3Reservation'=>'reservation',
+			'Nc2ToNc3Multidatabase'=>'multidatabase',
+		];
+		foreach ($checkNc2ModelNames as $nc3Name => $nc2TblName){
+			try {
+				$Nc2Tbl = $this->getNc2Model($nc2TblName);
+				$nc2Tbls = $Nc2Tbl->hasAny();
+			} catch (Exception $ex) {
+				if(($key = array_search($nc3Name, $migrationModelNames)) !== false) {
+					unset($migrationModelNames[$key]);
+				}
+			}
+		}
+
 		$excludePlugins = explode(',', $this->data['Nc2ToNc3']['exclude']);
 		foreach ($migrationModelNames as $migrationModelName) {
 			if (in_array(substr($migrationModelName, 8), $excludePlugins, true)) {
