@@ -436,10 +436,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		}
 		$data['RoomRolePermission'] = $this->getNc3DefaultRolePermission();
 		$data['PluginsRoom'] = $this->__generateNc3PluginsRoom($nc2Page);
-
 		// ルームのパーマリンクを追加（日本語）
 		if(isset($data['RoomsLanguage'][0])){
-			/* バリデーションエラー回避のために文字列置換する */
+			// バリデーションエラー回避のために文字列置換する
 			$replaceList = [
 				'%' => '％',
 				' ' => '　',
@@ -465,7 +464,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 			];
 			$search = array_keys($replaceList);
 			$replace = array_values($replaceList);
-			$permalink = str_replace($search, $replace, trim($data['RoomsLanguage'][0]['name']));
+			$permalink = (isset($nc2Page["Nc2Page"]["permalink"]))? $nc2Page["Nc2Page"]["permalink"] : str_replace($search, $replace, trim($data['RoomsLanguage'][0]['name']));
 			//パーマリンクバリデーションチェック(通過したルームのみ移行)
 			$Page = ClassRegistry::init('Pages.Page');
 			//パーマリンクの重複チェック
