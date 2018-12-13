@@ -61,7 +61,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2Announcement AppModel */
 		$Nc2Announcement = $this->getNc2Model('announcement');
-		$nc2Announcements = $Nc2Announcement->find('all');
+		$nc2Announcements = $Nc2Announcement->find('all',['order' => ['Nc2Announcement.block_id']]);
 
 		$Announcement = ClassRegistry::init('Announcements.Announcement');
 		//BlockBehaviorがシングルトンで利用されるため、BlockBehavior::settingsを初期化
