@@ -72,16 +72,30 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2Faq AppModel */
 		$Nc2Faq = $this->getNc2Model('faq');
-		$nc2Faqs = $Nc2Faq->find('all');
+		$query = [
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2FaqBlock',
+					'table' => 'faq_block',
+					'conditions' => 'Nc2Faq.faq_id = Nc2FaqBlock.faq_id',
+				],
+			],
+		];
+		$nc2Faqs = $Nc2Faq->find('all', $query);
 		if (!$this->__saveFaqFromNc2($nc2Faqs)) {
 			return false;
 		}
 
 		/* @var $Nc2FaqQuestion AppModel */
 		$Nc2FaqQuestion = $this->getNc2Model('faq_question');
-		$query['order'] = [
-			'faq_id',
-			'display_sequence'
+		unset($query);
+		$query = [
+			'order' => [
+				'faq_id',
+				'display_sequence'
+			],
 		];
 		$nc2Questions = $Nc2FaqQuestion->find('all', $query);
 		if (!$this->__saveFaqQuestionFromNc2($nc2Questions)) {
@@ -122,6 +136,7 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 
 		$Nc2FaqBlock = $this->getNc2Model('faq_block');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Block = ClassRegistry::init('Blocks.Block');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
 		foreach ($nc2Faqs as $nc2Faq) {
@@ -154,7 +169,21 @@ class Nc2ToNc3Faq extends Nc2ToNc3AppModel {
 					'faq_id' => $nc2Faq['Nc2Faq']['faq_id']
 				];
 				$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('faq_category', $query);
-				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
+
+				//ブロックIDが取得できるはずなのでセット
+				$nc3Block = $Block->findByRoomIdAndPluginKey(
+					$frameMap['Frame']['room_id'],
+					'faqs',
+					null,
+					null,
+					-1
+				);
+				if (!$nc3Block) {
+					$Faq->rollback();
+					continue;
+				}
+				$block_id = $nc3Block['Block']['id'];
+				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList, $block_id);
 
 				$this->writeCurrent($frameMap, 'faqs');
 
