@@ -425,6 +425,9 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			case '1': // タイトル順
 				$sortType = 'value1';
 				break;
+			default: // 該当無しの場合に対応
+				$sortType = '0'; // 指定無し
+				break;
 		}
 
 		$data['MultidatabaseFrameSetting'] = [
