@@ -11,9 +11,9 @@ NC2最新版（2.4.2.1）からNC3最新版に移行します。
 
 ### 手順
 
-1. [NC2を最新版にアップデート](#NC2を最新版にアップデート)
+1. [NC2を最新版にアップデート](#nc2を最新版にアップデート)
 1. [NC2の準備](#nc2の準備)
-1. [NC3の準備](#NC3の準備)
+1. [NC3の準備](#nc3の準備)
 1. [NC3のバックアップ](#nc3のバックアップ)
 1. [移行ツール実行](#移行ツール実行)
 
@@ -29,25 +29,15 @@ NC2が最新版でなかったら、最新版2.4.2.1にアップデートしま�
 
 #### NC3の準備
 
-NC3を新規インストールします。
-[NC3インストール（外部リンク）](https://www.netcommons.org/NetCommons3/download)
+NC3を新規インストールします。[NC3インストール（外部リンク）](https://www.netcommons.org/NetCommons3/download#!#frame-83)
 
-NC3を既にインストール済みの場合、最新版にアップデートします。
-[NC3アップデート（外部リンク）](https://nc2.netcommons.org/ヘルプデスク/NetCommons3/バージョンアップ方法/)
+NC3を既にインストール済みの場合、最新版にアップデートします。[NC3アップデート（外部リンク）](https://www.netcommons.org/NetCommons3/download#!#frame-156)
 
-##### NC3にNc2ToNc3配置
-
-NC3.1.5よりNc2ToNc3(移行ツール)が同梱されるようになったため、  
-app/Plugin配下に配置されています。
+Nc2ToNc3は、app/Plugin配下に配置されています。
 
 ```
 NetCommons3のパス/app/Plugin/Nc2ToNc3
 ```
-
-##### Nc2ToNc3のマイグレーション実行
-
-~~cakeコマンドのパス/cake Migrations.migration run -p Nc2ToNc3  -c master -i master~~  
-NC3.1.5よりNc2ToNc3(移行ツール)が同梱されるようになったため、マイグレーション実行は不要になりました。
 
 #### NC3のバックアップ
 
@@ -57,22 +47,34 @@ NC3.1.5よりNc2ToNc3(移行ツール)が同梱されるようになったため
 
 ```
 cd NetCommons3のパス/app
-./Console/cake Nc2ToNc3 --database NC2のDB名 --prefix NC2のテーブルプレフィックス名 --upload_path NC2のアップロードファイルフォルダーパス --base_url NC2のベースURL --nc3base NC3のベースパス
+./Console/cake Nc2ToNc3 --database NC2のDB名 --prefix NC2のテーブル名のprefix --upload_path NC2でアップロードしたファイルがあるディレクトリ --base_url NC2のベースURL --nc3base NC3のベースパス
 ```
-Ex.)
+
+**オプション**
+
+|               | 意味                                                |値の例
+|---------------| --------------------------------------------------- | ------
+|--database     |NC2のDB名                                            |nc2421
+|--prefix       |NC2の（DB内の）テーブル名のprefix                      |nc_
+|--upload_path  |NC2でアップロードしたファイルがあるディレクトリ          |/var/www/html/nc2/html/webapp/uploads/
+|--base_url     |NC2のベースURL                                        |http://example.com/nc2/html
+|--nc3base      |NC3のベースパス（ドキュメントルートからの相対パス）      | /nc3
+
+### 例)
+
+**環境例**
+
+|         | URL                         |DB名    |prefix   |ドキュメントルート
+|---------| --------------------------- | ------ | ------- | ------
+|NC2      |http://example.com/nc2/html  |nc2421  |nc       |/var/www/html/nc2/
+|NC3      |http://example.com/nc3       |nc3	 |なし     |/var/www/html/nc3/
+
+**コマンド例**
+
 ```
 cd /var/www/html/nc3/app
-./Console/cake Nc2ToNc3 --database nc2421 --prefix nc_ --upload_path /var/www/html/NC2/html/webapp/uploads/ --base_url http://example.com/NC2/html --nc3base /nc3
+./Console/cake Nc2ToNc3 --database nc2421 --prefix nc_ --upload_path /var/www/html/nc2/html/webapp/uploads/ --base_url http://example.com/nc2/html --nc3base /nc3
 ```
-
-~~CakePHPのMigrationを実行すると、管理画面に「NC2からの移行」メニューが追加され、画面から実行可能になります。~~
-~~画面からの実行は別環境のDBへも接続可能です。~~
-
-#### 補足
-
-2017/2/10 nc2_to_nc3_mapsテーブルを修正しました。
-map→nc3_id
-2/10以前にNc2ToNc3を配置した場合、nc2_to_nc3_mapsを一度削除して、再度[Migrationを実行](#マイグレーション実行)してください。
 
 #### 不具合情報
 
