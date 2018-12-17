@@ -111,6 +111,7 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 
 		$Nc2LinklistBlock = $this->getNc2Model('linklist_block');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Block = ClassRegistry::init('Blocks.Block');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
 		foreach ($nc2Linklists as $nc2Linklist) {
@@ -146,7 +147,20 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					'order' => 'category_sequence',
 				];
 				$nc2CategoryList = $Nc2ToNc3Category->getNc2CategoryList('linklist_category', $query);
-				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList);
+				//ブロックIDが取得できるはずなのでセット
+				$nc3Block = $Block->findByRoomIdAndPluginKey(
+					$frameMap['Frame']['room_id'],
+					'links',
+					null,
+					null,
+					-1
+				);
+				if (!$nc3Block) {
+					$LinkBlock->rollback();
+					continue;
+				}
+				$block_id = $nc3Block['Block']['id'];
+				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList, $block_id);
 
 				$this->writeCurrent($frameMap, 'links');
 				$LinkBlock->create();
