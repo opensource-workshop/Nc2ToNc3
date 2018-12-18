@@ -87,12 +87,25 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 		if (!$this->__saveTaskContentFromNc2($nc2TodoTasks)) {
 			return false;
 		}
+		unset($query);
 
 		/* @var $Nc2TodoBlock AppModel */
+		//件数が多い場合にメモリ値が超過してしまう為の対応
+		$limit = 1000;
+		$query = [
+			'order' => [
+				'Nc2TodoBlock.todo_id',
+				'Nc2TodoBlock.insert_time'
+			],
+			'limit' => $limit,
+			'offset' => 0,
+		];
 		$Nc2TodoBlock = $this->getNc2Model('todo_block');
-		$nc2TodoBlocks = $Nc2TodoBlock->find('all');
-		if (!$this->__saveFrameFromNc2($nc2TodoBlocks)) {
-			return false;
+		while ($nc2TodoBlocks = $Nc2TodoBlock->find('all', $query)) {
+			if (!$this->__saveFrameFromNc2($nc2TodoBlocks)) {
+				return false;
+			}
+			$query['offset'] += $limit;
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Task Migration end.'));
