@@ -59,10 +59,23 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2TodoModel AppModel */
 		$Nc2TodoModel = $this->getNc2Model('todo');
-		$nc2TodoDatas = $Nc2TodoModel->find('all');
-		if (!$this->__saveTaskFromNc2($nc2TodoDatas)) {
-			return false;
+		//件数が多い場合にメモリ値が超過してしまう為の対応
+		$limit = 1000;
+		$query = [
+			'order' => [
+				'Nc2Todo.insert_time',
+				'Nc2Todo.todo_id'
+			],
+			'limit' => $limit,
+			'offset' => 0,
+		];
+		while ($nc2TodoDatas = $Nc2TodoModel->find('all', $query)) {
+			if (!$this->__saveTaskFromNc2($nc2TodoDatas)) {
+				return false;
+			}
+			$query['offset'] += $limit;
 		}
+		unset($query);
 
 		/* @var $Nc2TodoTask AppModel */
 		$Nc2TodoTask = $this->getNc2Model('todo_task');
@@ -109,10 +122,20 @@ class Nc2ToNc3Task extends Nc2ToNc3AppModel {
 
 		$Nc2TodoBlock = $this->getNc2Model('todo_block');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Nc2ToNc3Category = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Category');
 		foreach ($nc2TodoDatas as $nc2TodoData) {
+
+			//件数が多い時用に追加
+			$frameMap = $Nc2ToNc3User->getMap($nc2TodoData['Nc2Todo']['insert_user_id']);
+			if (!$frameMap) {
+				$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2TodoData));
+				$this->writeMigrationLog($message);
+				continue;
+			}
+
 			$Task->begin();
 			try {
 				$nc2RoomId = $nc2TodoData['Nc2Todo']['room_id'];

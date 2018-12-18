@@ -60,9 +60,20 @@ class Nc2ToNc3Topic extends Nc2ToNc3AppModel {
 
 		/* @var $Nc2WhatsnewBlock AppModel */
 		$Nc2WhatsnewBlock = $this->getNc2Model('whatsnew_block');
-		$nc2WhatsnewBlocks = $Nc2WhatsnewBlock->find('all');
-		if (!$this->__saveTopicBlockFromNc2($nc2WhatsnewBlocks)) {
-			return false;
+		$limit = 1000;
+		$query = [
+			'order' => [
+				'Nc2WhatsnewBlock.block_id',
+			],
+			'limit' => $limit,
+			'offset' => 0,
+		];
+		while ($nc2WhatsnewBlocks = $Nc2WhatsnewBlock->find('all', $query)) {
+			$nc2WhatsnewBlocks = $Nc2WhatsnewBlock->find('all', $query);
+			if (!$this->__saveTopicBlockFromNc2($nc2WhatsnewBlocks)) {
+				return false;
+			}
+			$query['offset'] += $limit;
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Topic Migration end.'));
@@ -82,8 +93,18 @@ class Nc2ToNc3Topic extends Nc2ToNc3AppModel {
 		/* @var $Nc2ToNc3Frame Nc2ToNc3Frame */
 		$TopicFrameSetting = ClassRegistry::init('Topics.TopicFrameSetting');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
 
 		foreach ($nc2WhatsnewBlocks as $nc2WhatsnewBlock) {
+		
+			//件数が多い時用に追加
+			$frameMap = $Nc2ToNc3User->getMap($nc2WhatsnewBlock['Nc2WhatsnewBlock']['insert_user_id']);
+			if (!$frameMap) {
+				$message = __d('nc2_to_nc3', '%s does not migration.', $this->getLogArgument($nc2WhatsnewBlock));
+				$this->writeMigrationLog($message);
+				continue;
+			}
+
 			$TopicFrameSetting->begin();
 			try {
 				$data = $this->generateNc3TopicFrameSettingData($nc2WhatsnewBlock);
