@@ -90,7 +90,12 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$query = [
 			'fields' => 'DISTINCT lang_dirname',
 			'conditions' => $this->getNc2RoomConditions(),
-			'recursive' => -1
+			'recursive' => -1,
+			'order' => [
+				'Nc2Page.root_id',
+				'Nc2Page.thread_num',
+				'Nc2Page.display_sequence',
+			],
 		];
 		$nc2Pages = $Nc2Page->find('all', $query);
 
@@ -156,7 +161,9 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$query = [
 			'conditions' => $conditions,
 			'order' => [
-				'Nc2Page.parent_id',
+				'Nc2Page.root_id',
+				'Nc2Page.thread_num',
+				'Nc2Page.display_sequence',
 			],
 			'recursive' => -1
 		];
