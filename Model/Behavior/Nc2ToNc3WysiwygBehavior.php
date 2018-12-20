@@ -104,7 +104,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 
 		// @see https://regexper.com/#%2F(src%7Chref)%3D%22(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(%5C%3F%7Cindex%5C.php%5C%3F)action%3Dcommon_download_main%26(%3F%3Aamp%3B)%3Fupload_id%3D(%5Cd%2B)%22%2F
 		// BaseURLのディレクトリ型対応追加 置換順序の変更により、hrefは削除
-		$pattern = '/(src)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
 			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[4]);
@@ -302,6 +302,12 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
 			$replacePath = $match[2];
+
+			//実行順序を入れ替えたので、アップロードファイルへのリンクは次のタスクで実行する
+			preg_match('/action=common_download_main/', $replacePath, $uploadIdMatches);
+			if ($uploadIdMatches) {
+				continue;
+			}
 
 			preg_match('/page_id=(\d+)/', $replacePath, $pageIdMatches);
 			if ($pageIdMatches) {
