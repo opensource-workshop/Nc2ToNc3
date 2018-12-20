@@ -103,7 +103,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		$replaceUrl = Router::url('/', true). $sub_dir;
 
 		// @see https://regexper.com/#%2F(src%7Chref)%3D%22(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(%5C%3F%7Cindex%5C.php%5C%3F)action%3Dcommon_download_main%26(%3F%3Aamp%3B)%3Fupload_id%3D(%5Cd%2B)%22%2F
-		// BaseURLのディレクトリ型対応追加 置換順序の変更により、hrefは削除
+		// BaseURLのディレクトリ型対応追加
 		$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
@@ -111,6 +111,14 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 			if (!$nc3UploadFile) {
 				// エラー処理どうする？とりあえず継続しとく。
 				continue;
+			}
+
+			//画像へのリンクの場合にはhrefの続きでaction=common_download_mainがある場合がある
+			if ($match[1] === 'href') {
+				if(preg_match('/href.*?(src=\".*?")/', $match[0], $hrefImgMatch)){
+					$match[0] = $hrefImgMatch[1];
+					$match[1] = 'src';
+				}
 			}
 
 			// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/Controller/WysiwygFileController.php#L107
@@ -131,6 +139,14 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 				'/' . $nc3UploadFile['UploadFile']['room_id'] .
 				'/' . $nc3UploadFile['UploadFile']['id'] .
 				$size . '"';
+		}
+
+		//onmouseout, onmouseover, oncontextmenuの対応 一旦空にする
+		$onPattern = '/(onmouseover|onmouseout|oncontextmenu)=".*?"/';
+		preg_match_all($onPattern, $content, $onMatches, PREG_SET_ORDER);
+		foreach ($onMatches as $onMatch) {
+			$strReplaceArguments[0][] = $onMatch[0];
+			$strReplaceArguments[1][] = "";
 		}
 
 		return $strReplaceArguments;
