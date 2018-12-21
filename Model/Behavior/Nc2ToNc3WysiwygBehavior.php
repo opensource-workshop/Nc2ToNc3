@@ -260,6 +260,15 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
+
+			//画像の後にアイコンがある場合
+			if(preg_match('/common_download_main.*?<img.*?(src=\".*?\")/', $match[0], $downloadMatch)){
+				if(!preg_match($pattern, $downloadMatch[0], $downloadMatch2)){
+					continue;
+				}
+				$match[0] = $downloadMatch[1];
+			}
+
 			$strReplaceArguments[0][] = $match[0];
 
 			// class属性は最後になっているが、挿入された結果が先頭になっているので、src属性の前に設定
