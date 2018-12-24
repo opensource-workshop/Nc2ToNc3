@@ -113,6 +113,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* abbreviate_urlを置換する */
+		if (!$this->__migrateAbbreviateUrl()) {
+			return false;
+		}
+
 		/* キャビネットのダウンロード数を移行する */
 		if (!$this->__migrateCabinetFileDownloadNum()) {
 			return false;
@@ -145,6 +150,86 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration Common After end.'));
+
+		return true;
+	}
+
+/**
+ * Migrate Abbreviate Url
+ *
+ * @return bool
+ */
+	private function __migrateAbbreviateUrl() {
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'AbbreviateUrl Replace start.'));
+
+		$Nc2AbbreviateUrl = $this->getNc2Model('abbreviate_url');
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
+		$Announcement = ClassRegistry::init('Announcements.Announcement');
+		$connectionObjects = ConnectionManager::enumConnectionObjects();
+		$nc3config = $connectionObjects['master'];
+		$prefix = $nc3config['prefix'];
+
+		$limit = 100;
+		$query = [
+			'fields' => 'Nc2AbbreviateUrl.short_url, Nc2AbbreviateUrl.contents_id, Nc2AbbreviateUrl.unique_id',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2JournalPost',
+					'table' => 'journal_post',
+					'conditions' => 'Nc2AbbreviateUrl.dir_name = "journal" AND Nc2AbbreviateUrl.contents_id = Nc2JournalPost.journal_id AND Nc2AbbreviateUrl.unique_id = Nc2JournalPost.post_id',
+				]
+			],
+			'conditions' => [],
+			'order' => ['Nc2AbbreviateUrl.insert_time ASC'], 
+			'limit' => $limit,
+			'offset' => 0,
+		];
+		while ($nc2AbbreviateUrls = $Nc2AbbreviateUrl->find('all', $query)) {
+			foreach($nc2AbbreviateUrls as $nc2AbbreviateUrl){
+				// 移行済みのものだけを対象とする
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('BlogEntry', $nc2AbbreviateUrl['Nc2AbbreviateUrl']['unique_id']);
+				if (!$mapIdList) {
+					continue;
+				}
+				reset($mapIdList);
+				$nc3Id = current($mapIdList);
+
+				// ブログの置換先テキストを作成
+				$BlogEntryQuery = [
+					'fields' => 'BlogEntry.block_id, BlogEntry.key',
+					'conditions' => [
+						'BlogEntry.id' => $nc3Id,
+					],
+				];
+				$nc3BlogEntry = $BlogEntry->find('first', $BlogEntryQuery);
+				if(!$nc3BlogEntry){
+					continue;
+				}
+				// blogs/blog_entries/view/{blog_entries.block_id}/{blog_entries.key}/
+				$replaceText = 'blogs/blog_entries/view/'.$nc3BlogEntry['BlogEntry']['block_id']. '/'. $nc3BlogEntry['BlogEntry']['key']. '/';
+
+				$shortUrl = $nc2AbbreviateUrl['Nc2AbbreviateUrl']['short_url'];
+				$tbl = $prefix. "announcements";
+				// 更新用（UPDATE）ショートカットURLの後ろにパラメータがついていてもそのまま置換する（たぶん大丈夫なはず）
+				$directQuery = "UPDATE $tbl SET content=REPLACE(content, '". $shortUrl. "', '". $replaceText ."');";
+				// 確認用（SELECT）
+				//$directQuery = "SELECT * FROM $tbl AS Announcement WHERE content LIKE ". "'%". $shortUrl. "%';";
+				$targetAnnouncements = $Announcement->query($directQuery);
+				if(!count($targetAnnouncements) > 0){
+					continue;
+				}
+			}
+
+			$query['offset'] += $limit;
+
+			//CakeLog::debug(print_r($nc2AbbreviateUrls , true));
+			$this->writeMigrationLog(__d('nc2_to_nc3', ' Replace ' . $query['offset'] . 'end.'));
+		}
+
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'AbbreviateUrl Replace end.'));
 
 		return true;
 	}
