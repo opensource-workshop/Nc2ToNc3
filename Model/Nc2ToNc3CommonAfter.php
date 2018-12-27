@@ -679,7 +679,6 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 
 		$Frame = ClassRegistry::init('Frames.Frame');
 		/* 空のフレーム表示をnoneにする */
-/*
 		$query = [
 			'fields' => 'Frame.id, Frame.plugin_key',
 			'recursive' => -1,
@@ -697,7 +696,6 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		];
 		$frames = $Frame->find('all', $query);
 		$UpdateFrames = array_merge($UpdateFrames, $frames);
-*/
 
 		foreach ($UpdateFrames as $UpdateFrame) {
 			/* 抽出された全てのフレームをnoneにする */
