@@ -155,11 +155,10 @@ class Nc2ToNc3Link extends Nc2ToNc3AppModel {
 					null,
 					-1
 				);
-				if (!$nc3Block) {
-					$LinkBlock->rollback();
-					continue;
+				$block_id = null;
+				if ($nc3Block) {
+					$block_id = $nc3Block['Block']['id'];
 				}
-				$block_id = $nc3Block['Block']['id'];
 				$data['Categories'] = $Nc2ToNc3Category->generateNc3CategoryData($nc2CategoryList, $block_id);
 
 				$this->writeCurrent($frameMap, 'links');
