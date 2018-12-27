@@ -63,6 +63,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$Nc2Journal = $this->getNc2Model('journal');
 		$query = [
 			'recursive' => -1,
+			/*
 			'joins' => [
 				[
 					'type' => 'INNER',
@@ -71,6 +72,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					'conditions' => 'Nc2Journal.journal_id = Nc2JournalBlock.journal_id',
 				],
 			],
+			*/
 		];
 		$nc2Journals = $Nc2Journal->find('all', $query);
 		if (!$this->__saveNc3BlogFromNc2($nc2Journals)) {
