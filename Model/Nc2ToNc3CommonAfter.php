@@ -102,6 +102,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* noneフレームはnoneフレームにする */
+		if (!$this->__changeNoneFrame()) {
+			return false;
+		}
+
 		/* ページのレイアウトを移行する */
 		if (!$this->__migratePageLayout()) {
 			return false;
@@ -629,6 +634,83 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		return true;
+	}
+
+/**
+ * Change None Frame.
+ *
+ * @return bool
+ */
+	private function __changeNoneFrame() {
+
+		//お知らせモジュール noneframeの場合にnoneframeに変更する
+		$Nc2Announcement = $this->getNc2Model('announcement');
+		$query = [
+			'fields' => 'Nc2Announcement.block_id',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2Blocks',
+					'table' => 'blocks',
+					'conditions' => 'Nc2Blocks.block_id = Nc2Announcement.block_id',
+				],
+			],
+			'conditions' => [
+				'Nc2Blocks.theme_name' => 'noneframe',
+			],
+		];
+		$nc2Announcements = $Nc2Announcement->find('all', $query);
+		$UpdateFrames = [];
+		if(count($nc2Announcements) > 0){
+			$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
+			foreach ($nc2Announcements as $key => $val){
+				$nc3AnnouncementFrame = $Nc2ToNc3Frame->getMap($val['Nc2Announcement']['block_id']);
+				if (!$nc3AnnouncementFrame) {
+					continue;
+				}
+				$UpdateFrames[]['Frame'] = [
+					'id' => $nc3AnnouncementFrame['Frame']['id'],
+					'plugin_key' => 'announcements',
+				];
+			}
+		}
+
+		$Frame = ClassRegistry::init('Frames.Frame');
+		/* 空のフレーム表示をnoneにする */
+/*
+		$query = [
+			'fields' => 'Frame.id, Frame.plugin_key',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'FramesLanguages',
+					'table' => 'frames_languages',
+					'conditions' => 'FramesLanguages.frame_id = Frame.id',
+				]
+			],
+			'conditions' => [
+				'FramesLanguages.name' => '',
+			],
+		];
+		$frames = $Frame->find('all', $query);
+		$UpdateFrames = array_merge($UpdateFrames, $frames);
+*/
+
+		foreach ($UpdateFrames as $UpdateFrame) {
+			/* 抽出された全てのフレームをnoneにする */
+			$data['Frame'] = [
+				'id' => $UpdateFrame['Frame']['id'],
+				'plugin_key' => $UpdateFrame['Frame']['plugin_key'],
+				'header_type' => 'none',
+			];
+			if (! $Frame->saveFrame($data)) {
+				//エラー処理
+				return false;
+			}
+		}
 		return true;
 	}
 
