@@ -87,7 +87,7 @@ class Nc2ToNc3Frame extends Nc2ToNc3AppModel {
 				'Nc2Block.action_name !=' => 'login_view_main_init',//ログインモジュールは移行しないので追加 add by horiguchi@osws
 				/*
 				'or' => [
-					// デフォルトのNc2Blockデータ（お知らせ３つ）、メニュー、imagineは移行しない方が良いと思う。
+					// デフォルトのメニュー、imagineは移行しない方が良いと思う。
 					'Nc2Block.block_id >' => '5',
 					// お知らせ=ヘッダーNCロゴ（block_id=1）,お知らせ=ようこそ（block_id=3）は書き換えて再利用しているパターンがあるため移行する
 					'Nc2Block.block_id' => '1',
