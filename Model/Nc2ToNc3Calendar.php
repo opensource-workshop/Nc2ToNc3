@@ -98,6 +98,8 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 		$Nc2CalendarPlan = $this->getNc2Model('calendar_plan');
 		$query = [
 			'recursive' => -1,
+			//ブロックに配置されていなくても移行する
+			/*
 			'joins' => [
 				[
 					'type' => 'INNER',
@@ -112,6 +114,7 @@ class Nc2ToNc3Calendar extends Nc2ToNc3AppModel {
 					'conditions' => 'Nc2CalendarBlock.block_id = Nc2Block.block_id',
 				],
 			],
+			*/
 			'conditions' => [
 				'Nc2CalendarPlan.title !=' => "",
 			],
