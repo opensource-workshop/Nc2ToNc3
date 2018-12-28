@@ -133,7 +133,7 @@ class Nc2ToNc3Registration extends Nc2ToNc3AppModel {
 				Current::write('Room.id', $nc3RoomId);
 				$Frame->create();
 				$Block->create();
-				$BlocksLanguage->create(); //前移行プラグインに影響を与えているので暫定対応 20170/12/4 horiguchi
+				$BlocksLanguage->create();
 				$Registration->createBlock($frame);
 
 				$data = $this->generateNc3RegistrationData($nc2Registration);

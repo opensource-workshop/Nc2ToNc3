@@ -132,7 +132,7 @@ class Nc2ToNc3PhotoAlbum extends Nc2ToNc3AppModel {
 				Current::write('Frame', $frame['Frame']);
 				Current::write('Room.id', $nc3RoomId);
 				$Block->create();
-				$BlocksLanguage->create(); //前移行プラグインに影響を与えているので暫定対応 20170/12/4 horiguchi
+				$BlocksLanguage->create();
 				$PhotoAlbumsComponent->initializeSetting();
 				$frameSetting = $FrameSetting->read();
 				$data = [
