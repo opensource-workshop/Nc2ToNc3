@@ -326,7 +326,7 @@ class Nc2ToNc3CalendarBehavior extends Nc2ToNc3BaseBehavior {
 			// @see https://github.com/NetCommons3/Calendars/blob/3.1.0/Model/CalendarActionPlan.php#L376-L377
 			'is_detail' => '1',
 			'title_icon' => $this->_convertTitleIcon($nc2CalendarPlan['Nc2CalendarPlan']['title_icon']),
-			'title' => $nc2CalendarPlan['Nc2CalendarPlan']['title'],
+			'title' => ( $nc2CalendarPlan['Nc2CalendarPlan']['title'] != "" ) ? $nc2CalendarPlan['Nc2CalendarPlan']['title'] : 'none title',
 			'enable_time' => !$nc2AllDayFlag,
 			'detail_start_datetime' => date($dateFormat, strtotime($nc2StartTimeFull) + ($nc2TimezoneOffset * 3600)),
 			'detail_end_datetime' => date($dateFormat, strtotime($nc2EndTimeFull) + ($nc2TimezoneOffset * 3600)),
