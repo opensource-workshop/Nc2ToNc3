@@ -691,7 +691,8 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				]
 			],
 			'conditions' => [
-				'FramesLanguages.name' => '',
+				'Frame.plugin_key' => 'announcements',
+				'FramesLanguages.name' => ''
 			],
 		];
 		$frames = $Frame->find('all', $query);
