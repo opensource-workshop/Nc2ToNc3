@@ -104,7 +104,7 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 			'error' => UPLOAD_ERR_OK,
 			'size' => filesize($tmpName)
 		];
-
+/*
 		//パスワード付きPDFのチェックを追加（NC3へ移行はできない）
 		$nc2UploadPdfPassword = $this->checkPdfPassword($data);
 		if (!$nc2UploadPdfPassword) {
@@ -112,7 +112,7 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 			$this->writeMigrationLog($message);
 			return [];
 		}
-
+*/
 		//事前にUploadFileバリデーションのチェックを行う
 		$UploadFile = ClassRegistry::init('Files.UploadFile');
 		$_tmpData['UploadFile']['real_file_name'] = $data;
