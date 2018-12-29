@@ -138,7 +138,7 @@ class Nc2ToNc3LinkBehavior extends Nc2ToNc3BaseBehavior {
 				'block_id' => $nc3BlockId,
 				'status' => '1',
 				'language_id' => $nc3LinkBlock['LinkBlocksLanguage']['language_id'],
-				'url' => $this->__convertURL($nc2LinklistLink['Nc2LinklistLink']['url']),
+				'url' => trim($this->__convertURL($nc2LinklistLink['Nc2LinklistLink']['url'])),
 				'title' => $nc2LinklistLink['Nc2LinklistLink']['title'],
 				'description' => $nc2LinklistLink['Nc2LinklistLink']['description'],
 				'click_count' => $nc2LinklistLink['Nc2LinklistLink']['view_count'],
