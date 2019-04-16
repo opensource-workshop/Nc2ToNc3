@@ -52,6 +52,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Bbs Migration start.'));
@@ -98,7 +99,6 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
  * @return bool True on success
  * @throws Exception
  */
-
 	private function __saveNc3BbsFromNc2($nc2Bbses) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Bbs data Migration start.'));
 
@@ -119,16 +119,33 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
 
+		/* @see Nc2ToNc3Map::getMapIdList() */
+		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+		$mapRoomIdList = $Nc2ToNc3Map->getMapIdList('Room');
+
 		foreach ($nc2Bbses as $nc2Bbs) {
 			//var_dump($nc2Bbs);exit;
 			/** @var array $nc2BbsBlock */
 			$nc2BbsBlock = $Nc2BbsBlock->findByBbsId($nc2Bbs['Nc2Bb']['bbs_id'], null, null, -1);
-			if (!$nc2BbsBlock) {
-				continue;
-			}
+			// nc2配置してなくても移行する
+			//if (!$nc2BbsBlock) {
+			//	continue;
+			//}
 			$Bbs->begin();
 			try {
-				$data = $this->generateNc3BbsData($nc2Bbs, $nc2BbsBlock);
+				$nc2RoomId = $nc2Bbs['Nc2Bb']['room_id'];
+				// nc3 room_id取得
+				if (! isset($mapRoomIdList[$nc2RoomId])) {
+					// 基本ありえない想定
+					$message = __d('nc2_to_nc3', '%s No room ID corresponding to nc3',
+						'nc2_room_id:' . $nc2RoomId);
+					$this->writeMigrationLog($message);
+					$Bbs->rollback();
+					continue;
+				}
+				$nc3RoomId = $mapRoomIdList[$nc2RoomId];
+
+				$data = $this->generateNc3BbsData($nc2Bbs, $nc2BbsBlock, $nc3RoomId);
 				if (!$data) {
 					$Bbs->rollback();
 					continue;
@@ -141,7 +158,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$nc3Room = $Nc2ToNc3Room->getMap($nc2Bbs['Nc2Bb']['room_id']);
 				$nc3RoomId = $nc3Room['Room']['id'];
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$BlocksLanguage->create();
 				$Bbs->create();
@@ -160,11 +177,10 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Bbs) . "\n" .
 						var_export($Bbs->validationErrors, true);
 					$this->writeMigrationLog($message);
-					$Bbs->rollback();
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2BbsId = $nc2Bbs['Nc2Bb']['bbs_id'];
 				$idMap = [
@@ -227,7 +243,6 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$Block = ClassRegistry::init('Blocks.Block');
 				$Blocks = $Block->findById($data['Block']['id'], null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
 
@@ -241,15 +256,13 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$Block->create();
 				$Topic->create();
 
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				// Hash::merge で BbsArticle::validate['publish_start']['datetime']['rule']が
 				// ['datetime','datetime'] になってしまうので初期化
 				// @see https://github.com/NetCommons3/Bbses/blob/3.1.0/Model/BbsArticle.php#L138-L141
 				$BbsArticle->validate = [];
 				$BbsArticleTree->validate = [];
-
-				//error_log(print_r('dddddddddddddddddddddddddddddddddddd', true)."\n\n", 3, LOGS."/debug.log");
 
 				if (!$BbsArticle->saveBbsArticle($data)) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
@@ -266,7 +279,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2PostId = $nc2BbsPost['Nc2BbsPost']['post_id'];
 				$idMap = [

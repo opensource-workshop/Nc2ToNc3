@@ -139,7 +139,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$Cabinet->create();
 				$Block->create();
 
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				//error_log(print_r($data, true)."\n\n", 3, LOGS."/debug.log");
 				if (!$Cabinet->saveCabinet($data)) {
@@ -158,7 +158,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2CabinetId = $nc2CabinetManage['Nc2CabinetManage']['cabinet_id'];
 
@@ -226,7 +226,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$nc3RoomId = $Blocks['Block']['room_id'];
 				Current::write('Plugin.key', 'cabinets');
 				Current::write('Room.id', $nc3RoomId);
-				CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 				$BlocksLanguage->create();
 				$CabinetFile->create();
@@ -244,7 +244,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 				$nc2CabinetFileId = $nc2CabinetFile['Nc2CabinetFile']['file_id'];
 
@@ -265,7 +265,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', 'Cabinet Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', '  Cabinet file Migration end.'));
 		return true;
 	}
 

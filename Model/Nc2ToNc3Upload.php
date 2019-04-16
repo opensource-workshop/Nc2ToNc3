@@ -69,7 +69,8 @@ class Nc2ToNc3Upload extends Nc2ToNc3AppModel {
 			return $data;
 		}
 
-		$name = $nc2Upload['Nc2Upload']['file_name'];
+		//$name = $nc2Upload['Nc2Upload']['file_name'];
+		$name = $nc2Upload['Nc2Upload']['physical_file_name'];
 		/* NC2のデータにファイル名が無い場合は移行しない */
 		if ($name == "") {
 			$message = __d('nc2_to_nc3', '%s not filename .', 'Nc2Upload upload_id:' . $nc2Upload['Nc2Upload']['upload_id']);

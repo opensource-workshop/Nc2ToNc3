@@ -65,6 +65,7 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Quiz Migration start.'));
@@ -159,15 +160,13 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Quiz) . "\n" .
 						var_export($Quiz->validationErrors, true);
 					$this->writeMigrationLog($message);
-
-					$Quiz->rollback();
 					continue;
 				}
 
 				// 登録処理で使用しているデータを空に戻す
 				// 別メソッドにしたため、ここじゃできなくなった。
-				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
-				//unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_editable']['value']);
+				//unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+				//unset(Current::$permission[$nc3RoomId]['Permission']['content_editable']['value']);
 
 				$nc2QuizId = $nc2Quiz['Nc2Quiz']['quiz_id'];
 				$idMap = [
@@ -209,6 +208,7 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		$QFrameSetting = ClassRegistry::init('Quizzes.QuizFrameSetting');
 		$Nc2ToNc3Frame = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Frame');
 		$Block = ClassRegistry::init('Blocks.Block');
+
 		foreach ($nc2QBlocks as $nc2QBlock) {
 			$QFrameSetting->begin();
 			try {
@@ -290,6 +290,7 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		/* @var $Quiz Quiz */
 		$QAnswerSummary = ClassRegistry::init('Quizzes.QuizAnswerSummary');
 		$Quiz = ClassRegistry::init('Quizzes.Quiz');
+
 		$nc2PreviousQId = null;
 		foreach ($nc2QSummaries as $nc2QSummary) {
 			$QAnswerSummary->begin();
@@ -450,14 +451,14 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		// @see https://github.com/NetCommons3/Quizzes/blob/3.1.0/Model/QuizFrameDisplayQuiz.php#L257
 		// @see https://github.com/NetCommons3/Questionnaires/blob/3.1.0/Model/QuestionnaireFrameDisplayQuestionnaire.php#L259
 		Current::write('Block.id', $frameMap['Frame']['block_id']);
-		CurrentBase::$permission[$nc3RoomId]['Permission']['content_editable']['value'] = true;
+		Current::$permission[$nc3RoomId]['Permission']['content_editable']['value'] = true;
 
 		// @see https://github.com/NetCommons3/Topics/blob/3.1.0/Model/Behavior/TopicsBaseBehavior.php#L347
 		Current::write('Plugin.key', 'quizzes');
 
 		// @see https://github.com/NetCommons3/Workflow/blob/3.1.0/Model/Behavior/WorkflowBehavior.php#L171-L175
 		Current::write('Room.id', $nc3RoomId);
-		CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+		Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 		return true;
 	}
@@ -478,10 +479,10 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 		Current::remove('Room.id');
 
 		// Fatal error: Attempt to unset static property が発生。keyを指定した場合は発生しない。なんで？
-		//unset(CurrentBase::$permission);
-		$nc3RoomIds = array_keys(CurrentBase::$permission);
+		//unset(Current::$permission);
+		$nc3RoomIds = array_keys(Current::$permission);
 		foreach ($nc3RoomIds as $nc3RoomId) {
-			unset(CurrentBase::$permission[$nc3RoomId]);
+			unset(Current::$permission[$nc3RoomId]);
 		}
 	}
 }

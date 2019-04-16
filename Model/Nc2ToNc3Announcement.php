@@ -73,6 +73,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Topic = ClassRegistry::init('Topics.Topic');
 		$Nc2ToNc3User = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3User');
+
 		foreach ($nc2Announcements as $nc2Announcement) {
 			$Announcement->begin();
 
@@ -120,7 +121,7 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 			//Announcement テーブルの移行を実施。AVE前にCurrentのデータを書き換えが必要なため
 			Current::write('Plugin.key', 'announcements');
 			Current::write('Room.id', $nc3RoomId);
-			CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
+			Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = true;
 
 			// Model::idを初期化しないとUpdateになってしまう。
 			$Announcement->create();
@@ -134,12 +135,10 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				$message = $this->getLogArgument($nc2Announcement) . "\n" .
 					var_export($Announcement->validationErrors, true);
 				$this->writeMigrationLog($message);
-
-				$Announcement->rollback();
 				continue;
 			}
 
-			unset(CurrentBase::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
+			unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
 
 			$idMap = [
 				$nc2Blockld => $Announcement->id

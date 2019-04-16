@@ -79,6 +79,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
+ * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Room Migration start.'));
@@ -175,6 +176,10 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 		$RolesRoomsUser = ClassRegistry::init('Rooms.RolesRoomsUser');
 
 		foreach ($nc2Pages as $nc2Page) {
+			// 実行時間の計測開始時間
+			/* @see Nc2ToNc3BaseBehavior::executionTimeStart() */
+			$timeStart = $this->executionTimeStart();
+
 			/*
 			if (!$this->isMigrationRow($nc2User)) {
 				continue;
@@ -185,6 +190,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				$data = $this->__generateNc3Data($nc2Page);
 				if (!$data) {
 					$Room->rollback();
+					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
@@ -198,7 +204,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 						var_export($Room->validationErrors, true);
 					$this->writeMigrationLog($message);
 
-					$Room->rollback();
+					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 				$nc2PageId = $nc2Page['Nc2Page']['page_id'];
@@ -212,12 +218,14 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				if (!$RolesRoomsUser->saveRolesRoomsUsersForRooms($data)) {
 					// RolesRoomsUser::saveRolesRoomsUsersForRoomsではreturn falseなし
 					$Room->rollback();
+					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
 				$nc2RoomId = $nc2Page['Nc2Page']['room_id'];
 				if ($this->getMap($nc2RoomId)) {
 					$Room->commit();
+					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}
 
@@ -227,6 +235,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 				$this->saveMap('Room', $idMap);
 
 				$Room->commit();
+				$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
