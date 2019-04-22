@@ -103,8 +103,14 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		$replaceUrl = Router::url('/', true). $sub_dir;
 
 		// @see https://regexper.com/#%2F(src%7Chref)%3D%22(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(%5C%3F%7Cindex%5C.php%5C%3F)action%3Dcommon_download_main%26(%3F%3Aamp%3B)%3Fupload_id%3D(%5Cd%2B)%22%2F
-		// BaseURLのディレクトリ型対応追加
-		$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		// @see https://regexper.com/#%2F%28src%7Chref%29%3D%22%28http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F%29%28%5C%3F%7C%5B%5Cw%5Cd%5C%2F%25%23%24%26%28%29~_.%3D%2B%5C-%E3%81%81-%E3%82%93%E3%82%A1-%E3%83%B6%E4%B8%80-%E9%BE%A0%EF%BC%90-%EF%BC%99%E3%80%81%E3%80%82%E3%83%BC%5D%2B%5B%5C%3F%5D%2B%29action%3Dcommon_download_main%26%28%3F%3Aamp%3B%29%3Fupload_id%3D%28%5Cd%2B%29%22%2F
+		// BaseURLのディレクトリ型対応追加 & 下記のようなURL（ひらがなカタカナ漢字）でも対応
+		// http://localhost/9th/sanka/?action=common_download_main&amp;upload_id=90
+		// http://localhost/16th/大会長より/?action=common_download_main&upload_id=139
+		//
+		//$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		//$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|[\w\d\/%#$&()~_.=+\-ぁ-んァ-ヶー一-龠０-９、。]+[\?]+)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
 			$nc3UploadFile = $this->__saveUploadFileFromNc2($match[4]);
