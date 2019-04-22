@@ -777,7 +777,8 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		// この現象はバッチで使う移行プラグイン特有のもの。画面では問題ないと思われる。
 		if ($executionTime >= $executionFlushTime) {
 			//CakeLog::debug('[' . $methodName . '] ClassRegistry::flush()', ['Nc2ToNc3Performance']);
-			ClassRegistry::flush();
+			// アップロードファイルが全コケの現象がでたため、コメントアウト
+			//ClassRegistry::flush();
 		}
 	}
 }
