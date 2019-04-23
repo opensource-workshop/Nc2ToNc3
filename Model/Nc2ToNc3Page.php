@@ -228,6 +228,7 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 
 					$this->__numberOfValidationError++;
 
+					$Page->rollback();
 					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}

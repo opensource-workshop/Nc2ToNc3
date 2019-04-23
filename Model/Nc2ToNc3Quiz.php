@@ -160,6 +160,8 @@ class Nc2ToNc3Quiz extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Quiz) . "\n" .
 						var_export($Quiz->validationErrors, true);
 					$this->writeMigrationLog($message);
+
+					$Quiz->rollback();
 					continue;
 				}
 

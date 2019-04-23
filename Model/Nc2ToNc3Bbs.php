@@ -177,6 +177,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Bbs) . "\n" .
 						var_export($Bbs->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Bbs->rollback();
 					continue;
 				}
 

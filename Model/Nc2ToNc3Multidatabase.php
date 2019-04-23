@@ -200,6 +200,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Multidatabase) . "\n" .
 						var_export($Multidatabase->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
 					continue;
 				}
 
@@ -227,6 +228,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($data) . "\n" .
 						var_export($Multidatabase->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
 					continue;
 				}
 
@@ -249,6 +251,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($data) . "\n" .
 						var_export($Multidatabase->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Multidatabase->rollback();
 					continue;
 				}
 
@@ -503,6 +506,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2MultidbContent) . "\n" .
 						var_export($DbContent->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$DbContent->rollback();
 					continue;
 				}
 
