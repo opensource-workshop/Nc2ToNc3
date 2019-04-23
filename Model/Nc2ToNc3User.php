@@ -227,6 +227,7 @@ class Nc2ToNc3User extends Nc2ToNc3AppModel {
 
 					$this->__numberOfValidationError++;
 
+					$User->rollback();
 					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}

@@ -500,7 +500,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 			$sub_dir = $m[1]."/";
 		}
 		$prefixPath = Router::url('/', true). $sub_dir;
-
 		$map = [
 			'smiley/smiley-smile1.gif' => '40_010_smile.svg',
 			'smiley/smiley-smile2.gif' => '40_011_laugh.svg',
@@ -775,7 +774,8 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 		// この現象はバッチで使う移行プラグイン特有のもの。画面では問題ないと思われる。
 		if ($executionTime >= $executionFlushTime) {
 			//CakeLog::debug('[' . $methodName . '] ClassRegistry::flush()', ['Nc2ToNc3Performance']);
-			ClassRegistry::flush();
+			// アップロードファイルが全コケの現象がでたため、コメントアウト
+			//ClassRegistry::flush();
 		}
 	}
 }

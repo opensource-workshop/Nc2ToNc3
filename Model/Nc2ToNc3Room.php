@@ -204,6 +204,7 @@ class Nc2ToNc3Room extends Nc2ToNc3AppModel {
 						var_export($Room->validationErrors, true);
 					$this->writeMigrationLog($message);
 
+					$Room->rollback();
 					$this->executionTimeEnd(__METHOD__, $timeStart, $this->executionFlushTime);
 					continue;
 				}

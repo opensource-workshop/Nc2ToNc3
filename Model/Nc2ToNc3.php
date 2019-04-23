@@ -244,6 +244,10 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		// 実行時間の計測開始時間
+		/* @see Nc2ToNc3BaseBehavior::executionTimeStart() */
+		$timeStart = $this->executionTimeStart();
+
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration start.'));
 
 		// phpmdのNPath complexity threshold is 200 に対応するように機能ごとにループ
@@ -306,7 +310,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			}
 			// 実行時間の計測開始時間
 			/* @see Nc2ToNc3BaseBehavior::executionTimeStart() */
-			$timeStart = $this->executionTimeStart();
+			$timeModelStart = $this->executionTimeStart();
 
 			$migrationModelName = 'Nc2ToNc3.' . $migrationModelName;
 
@@ -332,7 +336,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 			// migrationModelが切り替わるタイミングで、いったん初期化する。
 			//ClassRegistry::flush();
 			/* @see Nc2ToNc3BaseBehavior::executionTimeEnd() */
-			$this->executionTimeEnd(__METHOD__ . ' ' . $migrationModelName, $timeStart,
+			$this->executionTimeEnd(__METHOD__ . ' ' . $migrationModelName, $timeModelStart,
 				$this->executionFlushTime, true);
 		}
 
@@ -344,6 +348,7 @@ class Nc2ToNc3 extends Nc2ToNc3AppModel {
 		}
 
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Migration end.'));
+		$this->executionTimeEnd(__METHOD__ , $timeStart, $this->executionFlushTime, true);
 
 		return true;
 	}

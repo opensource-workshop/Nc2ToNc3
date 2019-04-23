@@ -135,6 +135,8 @@ class Nc2ToNc3Announcement extends Nc2ToNc3AppModel {
 				$message = $this->getLogArgument($nc2Announcement) . "\n" .
 					var_export($Announcement->validationErrors, true);
 				$this->writeMigrationLog($message);
+
+				$Announcement->rollback();
 				continue;
 			}
 

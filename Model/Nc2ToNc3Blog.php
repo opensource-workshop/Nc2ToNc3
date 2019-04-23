@@ -172,6 +172,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2Journal) . "\n" .
 						var_export($Blog->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$Blog->rollback();
 					continue;
 				}
 
@@ -359,6 +360,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$message = $this->getLogArgument($nc2JournalPost) . "\n" .
 						var_export($BlogEntry->validationErrors, true);
 					$this->writeMigrationLog($message);
+					$BlogEntry->rollback();
 					continue;
 				}
 
