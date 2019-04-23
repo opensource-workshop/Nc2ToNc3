@@ -493,8 +493,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
  */
 	protected function _convertTitleIcon($titleIcon, $prefixPath = '/') {
 		/* @var $Nc2ToNc3 Nc2ToNc3 */
-// アップロードファイルが全こけしたため、コメントアウト
-/*
 		$Nc2ToNc3 = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3');
 		$nc2BaseUrl = Hash::get($Nc2ToNc3->data, ['Nc2ToNc3', 'base_url']);
 		$sub_dir = "";
@@ -502,7 +500,6 @@ class Nc2ToNc3BaseBehavior extends ModelBehavior {
 			$sub_dir = $m[1]."/";
 		}
 		$prefixPath = Router::url('/', true). $sub_dir;
-*/
 		$map = [
 			'smiley/smiley-smile1.gif' => '40_010_smile.svg',
 			'smiley/smiley-smile2.gif' => '40_011_laugh.svg',
