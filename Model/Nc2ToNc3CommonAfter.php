@@ -421,7 +421,76 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			$result = $PageContainer->updateAll($updated, $conditions);
 		}
 
-		/* Nc2の状態を取得する */
+		/* １．システム管理情報＞ぺージスタイル（タブ）＞レイアウト（タブ）で全ルームのレイアウトをセット */
+		$Nc2Config = $this->getNc2Model('config');
+		$query = [
+			'fields' => 'Nc2Config.conf_id, Nc2Config.conf_name, Nc2Config.conf_title, Nc2Config.conf_value',
+			'conditions' => [
+				'OR' => [
+					['Nc2Config.conf_name' => 'header_flag'],		//[nc2_conf_id:59]
+					['Nc2Config.conf_name' => 'leftcolumn_flag'],	//[nc2_conf_id:61]
+					['Nc2Config.conf_name' => 'rightcolumn_flag'],	//[nc2_conf_id:62]
+					['Nc2Config.conf_name' => 'footer_flag'],		//[nc2_conf_id:60]
+				],
+			],
+			'order' => ['Nc2Config.conf_id ASC'],
+		];
+		$nc2Configs = $Nc2Config->find('all', $query);
+		//CakeLog::debug(var_export($nc2Configs, true));
+		$nc2ConfigsVal = [];
+		foreach ($nc2Configs as $nc2Config) {
+			// $nc2Config['Nc2Config']['conf_name'] = header_flag|leftcolumn_flag|rightcolumn_flag|footer_flag
+			$nc2ConfigsVal[$nc2Config['Nc2Config']['conf_name']] = $nc2Config['Nc2Config']['conf_value'];
+		}
+		unset($nc2Configs);
+
+		// ルートのルームIDのリスト取得
+		$Room = ClassRegistry::init('Rooms.Room');
+		/* @see Room::getSpaceRooms() */
+		$spaceRooms = $Room->getSpaceRooms();
+		//CakeLog::debug(var_export($spaceRooms, true));
+
+		$arrPageIds = [];
+		$pageIds = [];
+		$Page = ClassRegistry::init('Pages.Page');
+
+		foreach ($spaceRooms as $spaceRoom) {
+			/* @see PagesEditController::layout() からコピー */
+			// ルーム配下ページID一覧を取得
+			// これでパブリックルームとそのサブルーム、コミュニティルームとそのサブルームも全部とれる。
+			$children = $Page->children($spaceRoom, false, 'id');
+			//CakeLog::debug(var_export($children, true));
+
+			/* 条件にあったページスタイルをセットする */
+			foreach ($children as $page) {
+				$arrPageIds[] = $page['Page']['id'];
+
+				// レイアウト 1=1 2=0 3=1 4=0 5=1 (ヘッダ、メイン、フッターあり、左右なし)
+				// 3はメインで表示いじらない。よって 1,2,4,5のみ
+				$pageIds[$page['Page']['id']] = [
+					'1' => $nc2ConfigsVal['header_flag'],
+					'2' => $nc2ConfigsVal['leftcolumn_flag'],
+					'4' => $nc2ConfigsVal['rightcolumn_flag'],
+					'5' => $nc2ConfigsVal['footer_flag'],
+				];
+			}
+		}
+		foreach ($pageIds as $pageId => $layouts) {
+			foreach ($layouts as $containerType => $isPublished) {
+				$updated = [
+					'PageContainer.is_published' => $isPublished,
+				];
+				$conditions = [
+					'PageContainer.page_id' => $pageId,
+					'PageContainer.container_type' => $containerType,
+					//'PageContainer.is_configured' => false,
+					'PageContainer.is_configured' => '0',
+				];
+				$result = $PageContainer->updateAll($updated, $conditions);
+			}
+		}
+
+		/* ２．Nc2の個別レイアウト状態をセット */
 		$Nc2PagesStyle = $this->getNc2Model('pages_style');
 		$query = [
 			'fields' => 'Nc2PagesStyle.set_page_id,Nc2PagesStyle.header_flag,Nc2PagesStyle.footer_flag,Nc2PagesStyle.leftcolumn_flag,Nc2PagesStyle.rightcolumn_flag',
@@ -439,11 +508,12 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			],
 		];
 		$nc2PagesStyle = $Nc2PagesStyle->find('all', $query);
+		//CakeLog::debug(var_export($nc2PagesStyle, true));
 
 		/* 条件にあったページスタイルをセットする */
 		$arrPageIds = [];
 		$pageIds = [];
-		foreach($nc2PagesStyle as $key => $val){
+		foreach ($nc2PagesStyle as $key => $val) {
 			$arrPageIds[] = $val['Nc2PagesStyle']['set_page_id'];
 			$pageIds[$val['Nc2PagesStyle']['set_page_id']] = [
 				'1' => $val['Nc2PagesStyle']['header_flag'],
@@ -452,12 +522,14 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				'5' => $val['Nc2PagesStyle']['footer_flag'],
 			];
 		}
+		//CakeLog::debug(var_export($arrPageIds, true));
+		//CakeLog::debug(var_export($pageIds, true));
 
 		/* ページスタイルを変更(追記)する */
 		if(count($arrPageIds) > 0){
 			$Nc2ToNc3Page = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Page');
 			$pageMap = $Nc2ToNc3Page->getMap($arrPageIds);
-			$nc3UpdatePageContainers = [];
+			//$nc3UpdatePageContainers = [];
 			foreach($pageMap as $nc2Id => $models){
 				$pageId = $models['Page']['id'];
 				//CakeLog::debug(print_r($models['Page']['permalink'] , true));
@@ -466,9 +538,10 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 						'PageContainer.is_published' => $isPublished,
 					];
 					$conditions = [
-						'PageContainer.is_configured' => false,
 						'PageContainer.page_id' => $pageId,
 						'PageContainer.container_type' => $containerType,
+						//'PageContainer.is_configured' => false,
+						'PageContainer.is_configured' => '0',
 					];
 					$result = $PageContainer->updateAll($updated, $conditions);
 				}
@@ -691,7 +764,8 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				]
 			],
 			'conditions' => [
-				'Frame.plugin_key' => 'announcements',
+				// タイトルが空ならプラグイン関係なく noneにする
+				//'Frame.plugin_key' => 'announcements',
 				'FramesLanguages.name' => ''
 			],
 		];
