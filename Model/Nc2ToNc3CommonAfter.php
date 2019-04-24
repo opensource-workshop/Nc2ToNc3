@@ -138,6 +138,10 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			return false;
 		}
 
+		/* パブリックルーム、コミュニティルームは全て、ルーム管理者のみ「Javascript等のHTMLタグを許可する権限」を付ける */
+		if (!$this->__migrateRoomHtmlNotLimited()) {
+			return false;
+		}
 
 
 		/* ルームを新テーマにする 今は不要 */
@@ -549,7 +553,6 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		}
 		return true;
 	}
-
 
 /**
  * Adjust Main Only Layout.
@@ -1226,6 +1229,43 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 			//エラー処理
 			return false;
 		}
+		return true;
+	}
+
+/**
+ * Migrate Room Setting html_not_limited.
+ * パブリックルーム、コミュニティルームは全て、ルーム管理者のみ「Javascript等のHTMLタグを許可する権限」を付ける
+ *
+ * @return bool
+ */
+	private function __migrateRoomHtmlNotLimited() {
+		$RoomRolePermission = ClassRegistry::init('Rooms.RoomRolePermission');
+		$roomRolePermissions = $RoomRolePermission->query(
+"SELECT
+   RoomRolePermission.id, RoomRolePermission.value
+FROM
+  `f_kokyoso_rooms` rooms,
+  `f_kokyoso_spaces` spaces,
+  `f_kokyoso_roles_rooms` roles_rooms,
+  `f_kokyoso_room_role_permissions` RoomRolePermission
+WHERE
+     rooms.space_id = spaces.id
+ AND spaces.type in ('2', '4')   -- 2:パブリックスペース, 4:コミュニティスペース
+ AND rooms.id = roles_rooms.room_id
+ AND roles_rooms.role_key = 'room_administrator'  -- ルーム管理者のみ
+ AND roles_rooms.id = RoomRolePermission.roles_room_id
+ AND RoomRolePermission.permission = 'html_not_limited'", false);
+		//CakeLog::debug(var_export($roomRolePermissions , true));
+
+		foreach ($roomRolePermissions as $roomRolePermission) {
+			$roomRolePermission['RoomRolePermission']['value'] = '1';
+			//CakeLog::debug(var_export($roomRolePermission , true));
+
+			if (! $RoomRolePermission->save($roomRolePermission, ['validate' => false])) {
+				return false;
+			}
+		}
+
 		return true;
 	}
 
