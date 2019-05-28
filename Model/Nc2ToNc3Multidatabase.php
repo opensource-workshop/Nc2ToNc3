@@ -1,6 +1,6 @@
 <?php
 /**
- * Nc2ToNc3Blog
+ * Nc2ToNc3Multidatabase
  *
  * @copyright Copyright 2014, NetCommons Project
  * @author Fujiki Hideyuki <TriangleShooter@gmail.com>
@@ -12,7 +12,7 @@ App::uses('Nc2ToNc3AppModel', 'Nc2ToNc3.Model');
 App::uses('Current', 'NetCommons.Utility');
 
 /**
- * Nc2ToNc3Blog
+ * Nc2ToNc3Multidatabase
  *
  * @see Nc2ToNc3BaseBehavior
  * @method void writeMigrationLog($message)
@@ -54,31 +54,31 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration start.'));
 
-		/* @var $Nc2Blog AppModel */
+		/* @var $Nc2Multidatabase AppModel */
 		$Nc2Multidatabase = $this->getNc2Model('multidatabase');
 		$nc2Multidatabases = $Nc2Multidatabase->find('all');
 		if (!$this->__saveNc3MultidatabaseFromNc2($nc2Multidatabases)) {
 			return false;
 		}
 
-		/* @var $Nc2MultidbBlock AppModel */
-		$Nc2MultidbBlock = $this->getNc2Model('multidatabase_block');
-		$nc2MultidbBlocks = $Nc2MultidbBlock->find('all');
-		if (!$this->__saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidbBlocks)) {
-			return false;
-		}
+		// 先にmetadataを移行しないとframeの移行で並び順カラムを設定できない
+        $Nc2MultidatabaseMetadata = $this->getNc2Model('multidatabase_metadata');
+        // col_noをうめるためにmultidatabase_id
+        $nc2MultidatabaseMetadatas = $Nc2MultidatabaseMetadata->find('all', [
+            'order' => 'multidatabase_id ASC'
+        ]);
+        if (!$this->__saveNc3MultidatabaseMetadataFromNc2($nc2MultidatabaseMetadatas)) {
+            return false;
+        }
 
-		$Nc2MultidbMetadata = $this->getNc2Model('multidatabase_metadata');
-		// col_noをうめるためにmultidatabase_id
-		$nc2MultidbMetadatas = $Nc2MultidbMetadata->find('all', [
-			'order' => 'multidatabase_id ASC'
-		]);
-		if (!$this->__saveNc3MultidatabaseMetadataFromNc2($nc2MultidbMetadatas)) {
+        /* @var $Nc2MultidatabaseBlock AppModel */
+		$Nc2MultidatabaseBlock = $this->getNc2Model('multidatabase_block');
+		$nc2MultidatabaseBlocks = $Nc2MultidatabaseBlock->find('all');
+		if (!$this->__saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidatabaseBlocks)) {
 			return false;
 		}
 
@@ -147,11 +147,11 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
  * @return bool True on success
  * @throws Exception
  */
+
 	private function __saveNc3MultidatabaseFromNc2($nc2Multidatabases) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase data Migration start.'));
 
-		/* @var $Multidatabase Blog */
-		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
+		/* @var $Multidatabase Multidatabase */
 		$Multidatabase = ClassRegistry::init('Multidatabases.Multidatabase');
 
 		Current::write('Plugin.key', 'multidatabases');
@@ -226,7 +226,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($data) . "\n" .
-						var_export($Multidatabase->validationErrors, true);
+						var_export($MultidatabaseSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 					$Multidatabase->rollback();
 					continue;
@@ -249,7 +249,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
 					$message = $this->getLogArgument($data) . "\n" .
-						var_export($Multidatabase->validationErrors, true);
+						var_export($MailSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 					$Multidatabase->rollback();
 					continue;
@@ -272,7 +272,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$Multidatabase->rollback($ex);
 				throw $ex;
 			}
@@ -283,28 +282,27 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Blog Multidatabase Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Multidatabase Migration end.'));
 		return true;
 	}
 
 /**
- * Save BlogFrameSetting from Nc2.
+ * Save MultidatabaseFrameSetting from Nc2.
  *
- * @param array $nc2MultidbBlocks Nc2MultidatabaseBlock data.
+ * @param array $nc2MultidatabaseBlocks Nc2ournalBlock data.
  * @return bool True on success
  * @throws Exception
  */
-	private function __saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidbBlocks) {
+	private function __saveNc3MultidatabaseFrameSettingFromNc2($nc2MultidatabaseBlocks) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  MultidatabaseFrameSetting data Migration start.'));
 
-		/* @var $MultidbFrameSetting BlogFrameSetting */
-		/* @var $Frame Frame */
+		/* @var $MultidbFrameSetting MultidatabaseFrameSetting */
 		$MultidbFrameSetting = ClassRegistry::init('Multidatabases.MultidatabaseFrameSetting');
 		$Frame = ClassRegistry::init('Frames.Frame');
-		foreach ($nc2MultidbBlocks as $nc2MultidbBlock) {
+		foreach ($nc2MultidatabaseBlocks as $nc2MultidatabaseBlock) {
 			$MultidbFrameSetting->begin();
 			try {
-				$data = $this->generateNc3MultidatabaseFrameSettingData($nc2MultidbBlock);
+				$data = $this->generateNc3MultidatabaseFrameSettingData($nc2MultidatabaseBlock);
 				if (!$data) {
 					$MultidbFrameSetting->rollback();
 					continue;
@@ -315,7 +313,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2MultidbBlock) . "\n" .
+					$message = $this->getLogArgument($nc2MultidatabaseBlock) . "\n" .
 						var_export($MultidbFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -327,7 +325,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
-					$message = $this->getLogArgument($nc2MultidbBlock) . "\n" .
+					$message = $this->getLogArgument($nc2MultidatabaseBlock) . "\n" .
 						var_export($MultidbFrameSetting->validationErrors, true);
 					$this->writeMigrationLog($message);
 
@@ -335,7 +333,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 					continue;
 				}
 
-				$nc2BlockId = $nc2MultidbBlock['Nc2MultidatabaseBlock']['block_id'];
+				$nc2BlockId = $nc2MultidatabaseBlock['Nc2MultidatabaseBlock']['block_id'];
 				$idMap = [
 					$nc2BlockId => $MultidbFrameSetting->id
 				];
@@ -345,7 +343,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::saveBlogFrameSetting()でthrowされるとこの処理に入ってこない
 				$MultidbFrameSetting->rollback($ex);
 				throw $ex;
 			}
@@ -372,8 +369,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 	private function __saveNc3MultidatabaseMetadataFromNc2($nc2Metadata) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  MultidatabaseMetadata Migration start.'));
 
-		/* @var $MultidbMetadata BlogFrameSetting */
-		/* @var $Frame Frame */
+		/** @var MultidatabaseMetadata $MultidbMetadata */
 		$MultidbMetadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
 
 		$MultidbMetadata->Behaviors->load('NetCommons.OriginalKey');
@@ -416,7 +412,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::saveBlogFrameSetting()でthrowされるとこの処理に入ってこない
 				$MultidbMetadata->rollback($ex);
 				throw $ex;
 			}
@@ -434,7 +429,7 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 	}
 
 /**
- * Save BlogEntry from Nc2.
+ * Save Multidatabase Content from Nc2.
  *
  * @param array $nc2MultidbContents Nc2JournalPost data.
  * @return bool True on success
@@ -443,20 +438,22 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 	private function __saveNc3MultidbContentFromNc2($nc2MultidbContents) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Multidatabase Content Migration start.'));
 
-		/* @var $DbContent MultidatabaseContent */
-		/* @var $Nc2ToNc3Category Nc2ToNc3Category */
+		/** @var MultidatabaseContent $DbContent */
 		$DbContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
 
 		Current::write('Plugin.key', 'multidatabases');
 
-		//$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
-		//$Block = ClassRegistry::init('Blocks.Block');
+		//$Nc2Journal = $this->getNc2Model('journal');
+		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
+		$Block = ClassRegistry::init('Blocks.Block');
 		//$Topic = ClassRegistry::init('Topics.Topic');
-		//$Nc2MultidbFile = $this->getNc2Model('multidatabase_file');
+
+		$Nc2MultidbFile = $this->getNc2Model('multidatabase_file');
+
 		$AuthorizationKey = ClassRegistry::init('AuthorizationKeys.AuthorizationKey');
 		$UploadFile = ClassRegistry::init('Files.UploadFile');
-		$Like = ClassRegistry::init('Likes.Like');
 
+		$Like = ClassRegistry::init('Likes.Like');
 		foreach ($nc2MultidbContents as $nc2MultidbContent) {
 			$DbContent->begin();
 			//$DbContent->Behaviors->disable('Attachment');
@@ -488,9 +485,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 				$nc3Status = $data['MultidatabaseContent']['status'];
 				Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value'] = ($nc3Status != 2);
 
-				// Hash::merge で BlogEntry::validate['publish_start']['datetime']['rule']が
-				// ['datetime','datetime'] になってしまうので初期化
-				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
 				$DbContent->validate = [];
 
 				//if (!$DbContent->saveContent($data, false)) {
@@ -561,7 +555,6 @@ class Nc2ToNc3Multidatabase extends Nc2ToNc3AppModel {
 
 			} catch (Exception $ex) {
 				// NetCommonsAppModel::rollback()でthrowされるので、以降の処理は実行されない
-				// $BlogFrameSetting::savePage()でthrowされるとこの処理に入ってこない
 				$DbContent->rollback($ex);
 				throw $ex;
 			}
