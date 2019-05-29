@@ -782,7 +782,11 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				'plugin_key' => $UpdateFrame['Frame']['plugin_key'],
 				'header_type' => 'none',
 			];
-			if (! $Frame->saveFrame($data)) {
+			// Frameモデル内で、$this->{$model}->afterFrameSave($frame);とかやって、Questionnaireモデルで落ちた
+			//   Questionnaireモデルで落ちた: Questionnaire.php(446): QuestionnaireSetting->saveBlock(Array)で'InternalErrorException' with message '内部サーバエラーが発生しました。' 
+			// 単にFrameをsaveしたいだけなので、saveメソッドに切り替える
+			//if (! $Frame->saveFrame($data)) {
+			if (! $Frame->save($data)) {
 				//エラー処理
 				return false;
 			}
@@ -1244,10 +1248,10 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 "SELECT
    RoomRolePermission.id, RoomRolePermission.value
 FROM
-  `f_kokyoso_rooms` rooms,
-  `f_kokyoso_spaces` spaces,
-  `f_kokyoso_roles_rooms` roles_rooms,
-  `f_kokyoso_room_role_permissions` RoomRolePermission
+  `{$RoomRolePermission->tablePrefix}rooms` rooms,
+  `{$RoomRolePermission->tablePrefix}spaces` spaces,
+  `{$RoomRolePermission->tablePrefix}roles_rooms` roles_rooms,
+  `{$RoomRolePermission->tablePrefix}room_role_permissions` RoomRolePermission
 WHERE
      rooms.space_id = spaces.id
  AND spaces.type in ('2', '4')   -- 2:パブリックスペース, 4:コミュニティスペース
