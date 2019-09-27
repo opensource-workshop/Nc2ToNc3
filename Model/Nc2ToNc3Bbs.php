@@ -52,7 +52,6 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Bbs Migration start.'));
@@ -99,6 +98,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
  * @return bool True on success
  * @throws Exception
  */
+
 	private function __saveNc3BbsFromNc2($nc2Bbses) {
 		$this->writeMigrationLog(__d('nc2_to_nc3', '  Bbs data Migration start.'));
 
@@ -232,6 +232,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
 		$BbsArticleTree = ClassRegistry::init('Bbses.BbsArticleTree');
+		$Like = ClassRegistry::init('Likes.Like');
 
 		foreach ($nc2BbsPosts as $nc2BbsPost) {
 
@@ -265,7 +266,7 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 				$BbsArticle->validate = [];
 				$BbsArticleTree->validate = [];
 
-				if (!$BbsArticle->saveBbsArticle($data)) {
+				if (!($nc3BbsArticle = $BbsArticle->saveBbsArticle($data))) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
 					$BbsArticle->rollback();
@@ -278,6 +279,11 @@ class Nc2ToNc3Bbs extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 					$BbsArticle->rollback();
 					continue;
+				}
+				if (isset($data['Like'])) {
+					$data['Like']['content_key'] = $nc3BbsArticle['BbsArticle']['key'];
+					$Like->create();
+					$Like->save($data);
 				}
 
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);

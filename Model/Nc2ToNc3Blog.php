@@ -54,7 +54,6 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
  * Migration method.
  *
  * @return bool True on success.
- * @throws Exception
  */
 	public function migrate() {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'Blog Migration start.'));
@@ -313,6 +312,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
+		$Like = ClassRegistry::init('Likes.Like');
 
 		foreach ($nc2JournalPosts as $nc2JournalPost) {
 			$BlogEntry->begin();
@@ -326,7 +326,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				$nc2CategoryId = $nc2JournalPost['Nc2JournalPost']['category_id'];
 				$data['BlogEntry']['category_id'] = $Nc2ToNc3Category->getNc3CategoryId($nc3BlockId, $nc2CategoryId);
 
-				//$Block = ClassRegistry::init('Blocks.Block');
+				$Block = ClassRegistry::init('Blocks.Block');
 				$Blocks = $Block->findById($nc3BlockId, null, null, -1);
 				$nc3RoomId = $Blocks['Block']['room_id'];
 
@@ -348,7 +348,7 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 				// @see https://github.com/NetCommons3/Blogs/blob/3.1.0/Model/BlogEntry.php#L138-L141
 				$BlogEntry->validate = [];
 
-				if (!$BlogEntry->saveEntry($data)) {
+				if (!($nc3BlogEntry = $BlogEntry->saveEntry($data))) {
 					// 各プラグインのsave○○にてvalidation error発生時falseが返ってくるがrollbackしていないので、
 					// ここでrollback
 					$BlogEntry->rollback();
@@ -362,6 +362,11 @@ class Nc2ToNc3Blog extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 					$BlogEntry->rollback();
 					continue;
+				}
+				if (isset($data['Like'])) {
+					$data['Like']['content_key'] = $nc3BlogEntry['BlogEntry']['key'];
+					$Like->create();
+					$Like->save($data);
 				}
 
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
