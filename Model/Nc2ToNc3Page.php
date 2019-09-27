@@ -321,13 +321,21 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 		// Page.slugに設定すれば良い？
 		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Controller/PagesEditController.php#L151
 		// @see https://github.com/NetCommons3/Pages/blob/3.0.1/Model/Behavior/PageSaveBehavior.php#L49-L68
+
+		// バグ修正でslugは、階層もたない形になったため、slugは/区切りの末尾の値をセットするように修正 mod by opensource-workshop.jp
+		$nc3Permalink = $this->convertPermalink($nc2Page['Nc2Page']['permalink']);
+		$nc3SlugArray = explode("/", $nc3Permalink);
+		$nc3Slug = end($nc3SlugArray);
+
 		$data = [
 			'Page' => [
 				'room_id' => $roomMap['Room']['id'],
 				'root_id' => $this->getNc3RootId($nc2Page, $roomMap),
 				'parent_id' => $map['Page']['id'],
-				'slug' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
-				'permalink' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
+				//'slug' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
+				//'permalink' => $this->convertPermalink($nc2Page['Nc2Page']['permalink']),
+				'slug' => $nc3Slug,
+				'permalink' => $nc3Permalink,
 			],
 			'Room' => [
 				'id' => $roomMap['Room']['id'],
