@@ -202,6 +202,9 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		$contentRoomId = Current::read('Room.id');
 		Current::write('Room.id', $roomMap['Room']['id']);
 
+		// 移行時の画像サイズは原寸のため、サムネイルは作成せず原寸のみにする。 add by mutaguchi@opensource-workshop.jp
+		$UploadFile->uploadSettings('real_file_name', 'thumbnailSizes', []);
+
 		// @see https://github.com/NetCommons3/Wysiwyg/blob/3.1.0/Controller/WysiwygFileController.php#L88
 		// @see https://github.com/NetCommons3/Files/blob/3.1.0/Model/UploadFile.php#L260-L263
 		$CakeFile = new File($fileData['tmp_name']);
