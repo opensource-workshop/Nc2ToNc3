@@ -207,6 +207,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 		$BlocksLanguage = ClassRegistry::init('Blocks.BlocksLanguage');
 		$Block = ClassRegistry::init('Blocks.Block');
 		$Topic = ClassRegistry::init('Topics.Topic');
+		$UploadFile = ClassRegistry::init('Files.UploadFile');
 
 		foreach ($nc2CabinetFiles as $nc2CabinetFile) {
 
@@ -232,7 +233,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 				$CabinetFile->create();
 				$Block->create();
 				$Topic->create();
-				if (!$CabinetFile->saveFile($data)) {
+				if (!($nc3CabinetFile = $CabinetFile->saveFile($data))) {
 					// print_rはPHPMD.DevelopmentCodeFragmentに引っかかった。
 					// var_exportは大丈夫らしい。。。
 					// @see https://phpmd.org/rules/design.html
@@ -242,6 +243,23 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 					$this->writeMigrationLog($message);
 					$CabinetFile->rollback();
 					continue;
+				}
+				// php7のコードをphp5系に修正 mod by opensource-workshop.jp
+				//$downloadCount = intval($data['DownloadCount'] ?? 0);
+				$downloadCount = isset($data['DownloadCount']) ? intval($data['DownloadCount']) : 0;
+				if ($downloadCount) {
+					// DownloadCount更新
+					$file = $UploadFile->find('first', [
+						'conditions' => [
+							'plugin_key' => 'cabinets',
+							'content_key' => $nc3CabinetFile['CabinetFile']['key'],
+							'field_name' => 'file',
+						]
+					]);
+					$file['UploadFile']['download_count'] = $downloadCount;
+					$file['UploadFile']['total_download_count'] = $downloadCount;
+					$UploadFile->create();
+					$UploadFile->save($file, false, false);
 				}
 
 				unset(Current::$permission[$nc3RoomId]['Permission']['content_publishable']['value']);
@@ -265,7 +283,7 @@ class Nc2ToNc3Cabinet extends Nc2ToNc3AppModel {
 		Current::remove('Room.id');
 		Current::remove('Plugin.key');
 
-		$this->writeMigrationLog(__d('nc2_to_nc3', '  Cabinet file Migration end.'));
+		$this->writeMigrationLog(__d('nc2_to_nc3', 'Cabinet Migration end.'));
 		return true;
 	}
 

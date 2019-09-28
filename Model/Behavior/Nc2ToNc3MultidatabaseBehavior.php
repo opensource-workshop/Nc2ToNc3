@@ -1,6 +1,6 @@
 <?php
 /**
- * Nc2ToNc3BlogBehavior
+ * Nc2ToNc3MultidatabaseBehavior
  *
  * @copyright Copyright 2014, NetCommons Project
  * @author Fujiki Hideyuki <TriangleShooter@gmail.com>
@@ -11,7 +11,7 @@
 App::uses('Nc2ToNc3BaseBehavior', 'Nc2ToNc3.Model/Behavior');
 
 /**
- * Nc2ToNc3BlogBehavior
+ * Nc2ToNc3MultidatabaseBehavior
  *
  */
 
@@ -116,7 +116,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			'Block' => [
 				'id' => '',
 				'room_id' => $nc3RoomId,
-				'plugin_key' => 'blogs',
+				'plugin_key' => 'multidatabase',
 				'name' => $nc2Multidatabase['Nc2Multidatabase']['multidatabase_name'],
 				'public_type' => $nc2Multidatabase['Nc2Multidatabase']['active_flag'],
 				'created_user' => $nc3CreatedUser,
@@ -418,7 +418,11 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		switch($nc2MultidatabaseBlock['Nc2MultidatabaseBlock']['default_sort']){
 			case 'seq': //カスタマイズ順
-				$sortType = '0'; // 指定無し　にマッピングしておく
+			case '': // 空 表示設定未保存時に空文字列になる NC2でこれもカスタマイズ順となる
+				// NC2でデフォルト（カスタマイズ順）のまま汎用DBコンテンツを追加すると、
+				// 作成日時順にdisplay_sequenceが設定され、手動で並べ替えない限り作成日時昇順になるので、
+				// NC2でカスタマイズ順になっていたら　作成日時の昇順として移行する
+				$sortType = 'created';
 				break;
 			case 'date': // 新着順
 				$sortType = 'created_desc'; // 作成日順
@@ -429,8 +433,15 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			case 'vote' : // 投票順　
 				$sortType = '0'; // 指定無しにマッピングしておく
 				break;
-			case '1': // タイトル順
-				$sortType = 'value1';
+            default:
+			    // タイトル順
+                //  default_sortが数字（seq, date, date_asc, vote以外）ならそれは並び順についかいたいカラムのmetadata_id
+                $metadataId = $nc2MultidatabaseBlock['Nc2MultidatabaseBlock']['default_sort'];
+                //  nc3のmetadata_idを取得
+                //  nc3のmetadataからcol_noを取得
+                // 'value' . col_noを$sort_typeにすればOK
+                $colNo = $this->__getColNoByNc2MetadataId($metadataId);
+				$sortType = 'value' . $colNo;
 				break;
 			default: // 該当無しの場合に対応
 				$sortType = '0'; // 指定無し
@@ -453,6 +464,28 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 		return $data;
 	}
+
+    private function __getColNoByNc2MetadataId($nc2MetadataId) {
+        // nc3のmetadata_idを取得
+        /** @var Nc2ToNc3Map $Nc2ToNc3Map */
+        $Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+        $multidbMetadata = ClassRegistry::init('Multidatabases.MultidatabaseMetadata');
+
+        $mapIdList = $Nc2ToNc3Map->getMapIdList('MultidatabaseMetadata', $nc2MetadataId);
+        $nc3metadataId = $mapIdList[$nc2MetadataId];
+
+        //  nc3のmetadataからcol_noを取得
+        $result = $multidbMetadata->find('first', [
+            'recursive' => -1,
+            'callbacks' => false,
+            'fields' => ['MultidatabaseMetadata.col_no'],
+            'conditions' => [
+                'MultidatabaseMetadata.id' => $nc3metadataId
+            ]
+        ]);
+
+        return isset($result['MultidatabaseMetadata']['col_no']) ? $result['MultidatabaseMetadata']['col_no'] : null;
+    }
 
 /**
  * NC3 metadataの準備
@@ -700,8 +733,10 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 
 				}
 
-			} elseif ($metadata[$nc3MetadataId]['type'] == 'checkbox') {
+			} elseif ($metadata[$nc3MetadataId]['type'] === 'checkbox') {
 				$data['MultidatabaseContent']['value' . $colNo] = str_replace('|', '||', $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content']);
+			} elseif ($metadata[$nc3MetadataId]['type'] === 'wysiwyg') {
+				$data['MultidatabaseContent']['value' . $colNo] = $model->convertWYSIWYG($nc2metadataContent['Nc2MultidatabaseMetadataContent']['content']);
 			} else {
 				$data['MultidatabaseContent']['value' . $colNo] = $nc2metadataContent['Nc2MultidatabaseMetadataContent']['content'];
 			}
@@ -787,24 +822,24 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 /**
  * Get Log argument.
  *
- * @param array $nc2Journal Array data of Nc2CalendarManage, Nc2CalendarBlock and Nc2CalendarPlan.
+ * @param array $nc2Multidatabase Array data of Nc2Multidatabase.
  * @return string Log argument
  */
-	private function __getLogArgument($nc2Journal) {
-		if (isset($nc2Journal['Nc2Journal'])) {
-			return 'Nc2Journal ' .
-				'journal_id:' . $nc2Journal['Nc2Journal']['journal_id'];
-		}
+    private function __getLogArgument($nc2Multidatabase) {
+        if (isset($nc2Multidatabase['Nc2Multidatabase'])) {
+            return 'Nc2Multidatabase ' .
+                'multidatabase_id:' . $nc2Multidatabase['Nc2Multidatabase']['multidatabase_id'] .
+                ' room_id:' . $nc2Multidatabase['Nc2Multidatabase']['room_id'];
+        }
 
-		if (isset($nc2Journal['Nc2MultidatabaseBlock'])) {
-			return 'Nc2MultidatabaseBlock ' .
-				'block_id:' . $nc2Journal['Nc2MultidatabaseBlock']['block_id'];
-		}
+        if (isset($nc2Multidatabase['Nc2MultidatabaseBlock'])) {
+            return 'Nc2MultidatabaseBlock ' .
+                'block_id:' . $nc2Multidatabase['Nc2MultidatabaseBlock']['block_id'];
+        }
 
-		if (isset($nc2Journal['Nc2MultidatabaseContent'])) {
-			return 'Nc2MultidatabaseContent ' .
-				'post_id:' . $nc2Journal['Nc2MultidatabaseContent']['post_id'];
-		}
-	}
-
+        if (isset($nc2Multidatabase['Nc2MultidatabaseContent'])) {
+            return 'Nc2MultidatabaseContent ' .
+                'post_id:' . $nc2Multidatabase['Nc2MultidatabaseContent']['post_id'];
+        }
+    }
 }
