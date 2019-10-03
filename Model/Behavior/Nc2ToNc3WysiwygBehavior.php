@@ -112,14 +112,18 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		//$replaceUrl = Router::url('/', true). $sub_dir;
 		$replaceUrl = Router::url('/', true);
 
-		// @see https://regexper.com/#%2F%28src%7Chref%29%3D%22%28http%3A%5C%2F%5C%2Flocalhost%5C%2F%7Chttps%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F%7Chttp%3A%5C%2F%5C%2Flocalhost%5C%2F.*%3F%5C%2F%7Chttps%3A%5C%2F%5C%2Flocalhost%5C%2F.*%3F%5C%2F%29%28%5C%3F%7C%5B%5Cw%5Cd%5C%2F%25%23%24%26%28%29~_.%3D%2B%5C-%E3%81%81-%E3%82%93%E3%82%A1-%E3%83%B6%E3%83%BC%E4%B8%80-%E9%BE%A0%EF%BC%90-%EF%BC%99%E3%80%81%E3%80%82%5D%2B%5B%5C%3F%5D%2B%29action%3Dcommon_download_main%26%28%3F%3Aamp%3B%29%3Fupload_id%3D%28%5Cd%2B%29%22%2F
-		// BaseURLのディレクトリ型対応追加 & 下記のようなURL（ひらがなカタカナ漢字）でも対応
-		// http://localhost/9th/sanka/?action=common_download_main&amp;upload_id=90
-		// http://localhost/16th/大会長より/?action=common_download_main&upload_id=139
-		//
+		// @see https://regexper.com/#%2F%28src%7Chref%29%3D%5B%22%5C'%5D%28http%3A%5C%2F%5C%2Flocalhost%5C%2F%7Chttps%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F%7Chttp%3A%5C%2F%5C%2Flocalhost%5C%2F%28%3F!.*%22%29%5C%2F%7Chttps%3A%5C%2F%5C%2Flocalhost%5C%2F%28%3F!.*%22%29%5C%2F%29%28%5C%3F%7C%5B%5Cw%5Cd%5C%2F%25%23%24%26%28%29~_.%3D%2B%5C-%E3%81%81-%E3%82%93%E3%82%A1-%E3%83%B6%E3%83%BC%E4%B8%80-%E9%BE%A0%EF%BC%90-%EF%BC%99%E3%80%81%E3%80%82%5D%2B%5B%5C%3F%5D%2B%29action%3Dcommon_download_main%26%28%3F%3Aamp%3B%29%3Fupload_id%3D%28%5Cd%2B%29%5B%22%5C'%5D%2F
+		// ・BaseURLのディレクトリ型対応追加
+		// ・・ディレクトリ型対応バグ修正 \/.*?\/ (ダブルクォート含む全文字0文字以上。これだとコンテンツに２つ<a>タグあるとバグった) → \/(?!.*")\/ (ダブルクォート以外の0文字以上)
+		// ・下記のようなURL（ひらがなカタカナ漢字）でも対応
+		//   http://localhost/9th/sanka/?action=common_download_main&amp;upload_id=90
+		//   http://localhost/16th/大会長より/?action=common_download_main&upload_id=139
+		// ・シングルクォート囲みにも対応 src=""|src=''|herf=""|herf=''
+		// ・NC2のコンテンツにhttp://nc2BaseUrl/, https://nc2BaseUrl/混在でも変換に対応
 		//$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
 		//$pattern = '/(src|href)="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(\?|index\.php\?)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
-		$pattern = '/(src|href)="(' . $nc2BaseUrlHttp . '\/|' . $nc2BaseUrlHttps . '\/|\.\/|' . $nc2BaseUrlHttp . '\/.*?\/|' . $nc2BaseUrlHttps . '\/.*?\/)(\?|[\w\d\/%#$&()~_.=+\-ぁ-んァ-ヶー一-龠０-９、。]+[\?]+)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		//$pattern = '/(src|href)="(' . $nc2BaseUrlHttp . '\/|' . $nc2BaseUrlHttps . '\/|\.\/|' . $nc2BaseUrlHttp . '\/.*?\/|' . $nc2BaseUrlHttps . '\/.*?\/)(\?|[\w\d\/%#$&()~_.=+\-ぁ-んァ-ヶー一-龠０-９、。]+[\?]+)action=common_download_main&(?:amp;)?upload_id=(\d+)"/';
+		$pattern = '/(src|href)=["\'](\.\/|' . $nc2BaseUrlHttp . '\/|' . $nc2BaseUrlHttps . '\/|' . $nc2BaseUrlHttp . '\/(?!.*")\/|' . $nc2BaseUrlHttps . '\/(?!.*")\/)(\?|[0-9a-zA-Z\/%#\$&\(\)~_\.=\+\-ぁ-んァ-ヶー一-龠０-９、。]+[\?]+)action=common_download_main&(?:amp;)?upload_id=([0-9]+)["\']/';
 
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
