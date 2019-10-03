@@ -347,7 +347,7 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		//if(preg_match("/.*?\:\/\/.*?\/(.*$)/",$nc2BaseUrl, $m)){
 		//	$sub_dir = $m[1]."/";
 		//}
-		$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
+		//$nc2BaseUrl = preg_quote($nc2BaseUrl, '/');
 		$nc2BaseUrlHttp = preg_quote($nc2BaseUrlHttp, '/');
 		$nc2BaseUrlHttps = preg_quote($nc2BaseUrlHttps, '/');
 
@@ -356,9 +356,12 @@ class Nc2ToNc3WysiwygBehavior extends Nc2ToNc3BaseBehavior {
 		//$replaceBaseUrl = Router::url('/', true). $sub_dir;
 		$replaceBaseUrl = Router::url('/', true);
 
-		// @see https://regexper.com/#%2Fhref%3D(http%3A%5C%2F%5C%2Flocalhost%5C%2F%7C%5C.%5C%2F)(.*%3F)%22%2F
+		// ・BaseURLのディレクトリ型対応追加
+		// ・シングルクォート囲みにも対応 src=""|src=''|herf=""|herf=''
+		// ・NC2のコンテンツにhttp://nc2BaseUrl/, https://nc2BaseUrl/混在でも変換に対応
 		//$pattern = '/href="(' . $nc2BaseUrl . '\/|\.\/|' . $nc2BaseUrl . '\/.*?\/)(.*?)"/';
-		$pattern = '/href="(' . $nc2BaseUrlHttp . '\/|' . $nc2BaseUrlHttps . '\/|\.\/|' . $nc2BaseUrlHttp . '\/.*?\/|' . $nc2BaseUrlHttps . '\/.*?\/)(.*?)"/';
+		//$pattern = '/href="(' . $nc2BaseUrlHttp . '\/|' . $nc2BaseUrlHttps . '\/|\.\/|' . $nc2BaseUrlHttp . '\/.*?\/|' . $nc2BaseUrlHttps . '\/.*?\/)(.*?)"/';
+		$pattern = '/href=["\'](' . $nc2BaseUrlHttp . '\/|' . $nc2BaseUrlHttps . '\/|\.\/|' . $nc2BaseUrlHttp . '\/(?!.*")\/|' . $nc2BaseUrlHttps . '\/(?!.*")\/)(.*?)["\']/';
 		preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 		foreach ($matches as $match) {
 			$replacePath = $match[2];
