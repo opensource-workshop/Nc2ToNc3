@@ -165,6 +165,7 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 
 /**
  * Migrate Abbreviate Url
+ * お知らせ,ブログ,汎用DB,掲示板に書かれた、NC2日誌,汎用DB,掲示板の短縮URLを置換する
  *
  * @return bool
  */
@@ -173,12 +174,18 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 
 		$Nc2AbbreviateUrl = $this->getNc2Model('abbreviate_url');
 		$Nc2ToNc3Map = ClassRegistry::init('Nc2ToNc3.Nc2ToNc3Map');
+
 		$BlogEntry = ClassRegistry::init('Blogs.BlogEntry');
 		$Announcement = ClassRegistry::init('Announcements.Announcement');
+		$MultidatabaseContent = ClassRegistry::init('Multidatabases.MultidatabaseContent');
+		$BbsArticle = ClassRegistry::init('Bbses.BbsArticle');
+
 		$connectionObjects = ConnectionManager::enumConnectionObjects();
 		$nc3config = $connectionObjects['master'];
 		$prefix = $nc3config['prefix'];
 
+		// --- 日誌
+		// NC2日誌の短縮URLを置換する
 		$limit = 100;
 		$query = [
 			'fields' => 'Nc2AbbreviateUrl.short_url, Nc2AbbreviateUrl.contents_id, Nc2AbbreviateUrl.unique_id',
@@ -221,15 +228,119 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 				$replaceText = 'blogs/blog_entries/view/'.$nc3BlogEntry['BlogEntry']['block_id']. '/'. $nc3BlogEntry['BlogEntry']['key']. '/';
 
 				$shortUrl = $nc2AbbreviateUrl['Nc2AbbreviateUrl']['short_url'];
-				$tbl = $prefix. "announcements";
-				// 更新用（UPDATE）ショートカットURLの後ろにパラメータがついていてもそのまま置換する（たぶん大丈夫なはず）
-				$directQuery = "UPDATE $tbl SET content=REPLACE(content, '". $shortUrl. "', '". $replaceText ."');";
-				// 確認用（SELECT）
-				//$directQuery = "SELECT * FROM $tbl AS Announcement WHERE content LIKE ". "'%". $shortUrl. "%';";
-				$targetAnnouncements = $Announcement->query($directQuery);
-				if(!count($targetAnnouncements) > 0){
+
+				// --- 短縮URL置換
+				$this->__migrateAbbreviateUrlReplase($prefix, $shortUrl, $replaceText, $Announcement);
+			}
+
+			$query['offset'] += $limit;
+
+			//CakeLog::debug(print_r($nc2AbbreviateUrls , true));
+			$this->writeMigrationLog(__d('nc2_to_nc3', ' Replace ' . $query['offset'] . 'end.'));
+		}
+
+		// --- 汎用DB
+		// NC2汎用DBの短縮URLを置換する
+		$query = [
+			'fields' => 'Nc2AbbreviateUrl.short_url, Nc2AbbreviateUrl.contents_id, Nc2AbbreviateUrl.unique_id',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2MultidatabaseContent',
+					'table' => 'multidatabase_content',
+					'conditions' => 'Nc2AbbreviateUrl.dir_name = "multidatabase" AND Nc2AbbreviateUrl.contents_id = Nc2MultidatabaseContent.multidatabase_id AND Nc2AbbreviateUrl.unique_id = Nc2MultidatabaseContent.content_id',
+				]
+			],
+			'conditions' => [],
+			'order' => ['Nc2AbbreviateUrl.insert_time ASC'], 
+			'limit' => $limit,
+			'offset' => 0,
+		];
+		while ($nc2AbbreviateUrls = $Nc2AbbreviateUrl->find('all', $query)) {
+			foreach($nc2AbbreviateUrls as $nc2AbbreviateUrl){
+				// 移行済みのものだけを対象とする
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('MultidatabaseContent', $nc2AbbreviateUrl['Nc2AbbreviateUrl']['unique_id']);
+				if (!$mapIdList) {
 					continue;
 				}
+				reset($mapIdList);
+				$nc3Id = current($mapIdList);
+
+				// 汎用DBの置換先テキストを作成
+				$MultidatabaseContentQuery = [
+					'fields' => 'MultidatabaseContent.block_id, MultidatabaseContent.key',
+					'conditions' => [
+						'MultidatabaseContent.id' => $nc3Id,
+					],
+				];
+				$nc3MultidatabaseContent = $MultidatabaseContent->find('first', $MultidatabaseContentQuery);
+				if(!$nc3MultidatabaseContent){
+					continue;
+				}
+				// multidatabases/multidatabase_contents/detail/{multidatabase_contents.block_id}/{multidatabase_contents.key}/
+				$replaceText = 'multidatabases/multidatabase_contents/detail/'.$nc3MultidatabaseContent['MultidatabaseContent']['block_id']. '/'. $nc3MultidatabaseContent['MultidatabaseContent']['key']. '/';
+
+				$shortUrl = $nc2AbbreviateUrl['Nc2AbbreviateUrl']['short_url'];
+
+				// --- 短縮URL置換
+				$this->__migrateAbbreviateUrlReplase($prefix, $shortUrl, $replaceText, $Announcement);
+			}
+
+			$query['offset'] += $limit;
+
+			//CakeLog::debug(print_r($nc2AbbreviateUrls , true));
+			$this->writeMigrationLog(__d('nc2_to_nc3', ' Replace ' . $query['offset'] . 'end.'));
+		}
+
+		// --- 掲示板
+		// NC2掲示板の短縮URLを置換する
+		// nc2: bbs_post
+		// nc3: bbs_articles
+		$query = [
+			'fields' => 'Nc2AbbreviateUrl.short_url, Nc2AbbreviateUrl.contents_id, Nc2AbbreviateUrl.unique_id',
+			'recursive' => -1,
+			'joins' => [
+				[
+					'type' => 'INNER',
+					'alias' => 'Nc2BbsPost',
+					'table' => 'bbs_post',
+					'conditions' => 'Nc2AbbreviateUrl.dir_name = "bbs" AND Nc2AbbreviateUrl.contents_id = Nc2BbsPost.bbs_id AND Nc2AbbreviateUrl.unique_id = Nc2BbsPost.post_id',
+				]
+			],
+			'conditions' => [],
+			'order' => ['Nc2AbbreviateUrl.insert_time ASC'], 
+			'limit' => $limit,
+			'offset' => 0,
+		];
+		while ($nc2AbbreviateUrls = $Nc2AbbreviateUrl->find('all', $query)) {
+			foreach($nc2AbbreviateUrls as $nc2AbbreviateUrl){
+				// 移行済みのものだけを対象とする
+				$mapIdList = $Nc2ToNc3Map->getMapIdList('BbsArticle', $nc2AbbreviateUrl['Nc2AbbreviateUrl']['unique_id']);
+				if (!$mapIdList) {
+					continue;
+				}
+				reset($mapIdList);
+				$nc3Id = current($mapIdList);
+
+				// 汎用DBの置換先テキストを作成
+				$BbsArticleQuery = [
+					'fields' => 'BbsArticle.block_id, BbsArticle.key',
+					'conditions' => [
+						'BbsArticle.id' => $nc3Id,
+					],
+				];
+				$nc3BbsArticle = $BbsArticle->find('first', $BbsArticleQuery);
+				if(!$nc3BbsArticle){
+					continue;
+				}
+				// bbses/bbs_articles/view/{bbs_articles.block_id}/{bbs_articles.key}/
+				$replaceText = 'bbses/bbs_articles/view/'.$nc3BbsArticle['BbsArticle']['block_id']. '/'. $nc3BbsArticle['BbsArticle']['key']. '/';
+
+				$shortUrl = $nc2AbbreviateUrl['Nc2AbbreviateUrl']['short_url'];
+
+				// --- 短縮URL置換
+				$this->__migrateAbbreviateUrlReplase($prefix, $shortUrl, $replaceText, $Announcement);
 			}
 
 			$query['offset'] += $limit;
@@ -241,6 +352,54 @@ class Nc2ToNc3CommonAfter extends Nc2ToNc3AppModel {
 		$this->writeMigrationLog(__d('nc2_to_nc3', 'AbbreviateUrl Replace end.'));
 
 		return true;
+	}
+
+/**
+ * Migrate Abbreviate Url, Replase to nc3 url.
+ *
+ * @return bool
+ */
+	private function __migrateAbbreviateUrlReplase($prefix, $shortUrl, $replaceText, $Announcement) {
+		// --- お知らせの短縮URL置換
+		$tbl = $prefix. "announcements";
+		// 更新用（UPDATE）ショートカットURLの後ろにパラメータがついていてもそのまま置換する（たぶん大丈夫なはず）
+		$directQuery = "UPDATE $tbl SET content=REPLACE(content, '". $shortUrl. "', '". $replaceText ."');";
+		// 確認用（SELECT）
+		//$directQuery = "SELECT * FROM $tbl AS Announcement WHERE content LIKE ". "'%". $shortUrl. "%';";
+		//$targetAnnouncements = $Announcement->query($directQuery);
+		$targets = $Announcement->query($directQuery);
+		//if(!count($targetAnnouncements) > 0){
+		//	continue;
+		//}
+
+		// --- ブログの短縮URL置換
+		$tbl = $prefix. "blog_entries";
+		// 更新用（UPDATE）ショートカットURLの後ろにパラメータがついていてもそのまま置換する（たぶん大丈夫なはず）
+		$directQuery = "UPDATE $tbl SET body1=REPLACE(body1, '". $shortUrl. "', '". $replaceText ."'), " . 
+										"body2=REPLACE(body2, '". $shortUrl. "', '". $replaceText ."');";
+		// queryで直接SQL実行なので、どのモデルでも実行できる
+		//$targetBlogEntries = $BlogEntry->query($directQuery);
+		$targets = $Announcement->query($directQuery);
+
+		// --- 汎用DBの短縮URL置換
+		$tbl = $prefix. "multidatabase_contents";
+		// 更新用（UPDATE）ショートカットURLの後ろにパラメータがついていてもそのまま置換する（たぶん大丈夫なはず）
+		$directQuery = "UPDATE $tbl SET value1=REPLACE(value1, '". $shortUrl. "', '". $replaceText ."'), ";
+		for ($i = 2; $i <= 99; $i++) {
+			$directQuery .= "value$i=REPLACE(value$i, '". $shortUrl. "', '". $replaceText ."'), ";
+		}
+		$directQuery .= "value100=REPLACE(value100, '". $shortUrl. "', '". $replaceText ."');";
+		// queryで直接SQL実行なので、どのモデルでも実行できる
+		//$targetMultidatabaseContents = $MultidatabaseContent->query($directQuery);
+		$targets = $Announcement->query($directQuery);
+
+		// --- 掲示板の短縮URL置換
+		$tbl = $prefix. "bbs_articles";
+		// 更新用（UPDATE）ショートカットURLの後ろにパラメータがついていてもそのまま置換する（たぶん大丈夫なはず）
+		$directQuery = "UPDATE $tbl SET content=REPLACE(content, '". $shortUrl. "', '". $replaceText ."');";
+		// queryで直接SQL実行なので、どのモデルでも実行できる
+		//$targetBbsArticles = $BbsArticle->query($directQuery);
+		$targets = $Announcement->query($directQuery);
 	}
 
 /**
