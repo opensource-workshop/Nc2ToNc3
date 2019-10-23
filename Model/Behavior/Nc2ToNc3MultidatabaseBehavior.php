@@ -443,9 +443,6 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
                 $colNo = $this->__getColNoByNc2MetadataId($metadataId);
 				$sortType = 'value' . $colNo;
 				break;
-			default: // 該当無しの場合に対応
-				$sortType = '0'; // 指定無し
-				break;
 		}
 
 		$data['MultidatabaseFrameSetting'] = [
