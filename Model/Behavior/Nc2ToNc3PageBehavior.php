@@ -68,10 +68,14 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
 		);
 		*/
 		foreach ($nc2Pages as $nc2Page) {
+			// mod by opensource-workshop.jp
+			// NC2のグループルーム・追加したパブリックルームに設定したpermalinkをNC3へ反映する対応
+			// https://github.com/NetCommons3/NetCommons3/issues/1069
+			// NC2にあるpageテーブルで、Nc2Page.page_id = Nc2Page.room_idはルームのページデータなので、ここでreturnしない
 			/* トップがルームの場合は返却 */
-			if ($nc2Page['Nc2Page']['page_id'] == $nc2Page['Nc2Page']['room_id']) {
-				return;
-			}
+			//if ($nc2Page['Nc2Page']['page_id'] == $nc2Page['Nc2Page']['room_id']) {
+			//	return;
+			//}
 			$nc2PageId = $nc2Page['Nc2Page']['page_id'];
 			$idMap = [
 				$nc2PageId => $nc3PageId
@@ -193,7 +197,11 @@ class Nc2ToNc3PageBehavior extends Nc2ToNc3PageBaseBehavior {
  */
 	private function __getNc2PageConditions() {
 		$conditions = [
-			'Nc2Page.page_id != Nc2Page.room_id',
+			// mod by opensource-workshop.jp
+			// NC2のグループルーム・追加したパブリックルームに設定したpermalinkをNC3へ反映する対応
+			// https://github.com/NetCommons3/NetCommons3/issues/1069
+			// NC2にあるpageテーブルで、Nc2Page.page_id = Nc2Page.room_idはルームのページデータなので、ここで除外しない
+			//'Nc2Page.page_id != Nc2Page.room_id',
 			'Nc2Page.parent_id !=' => '0',
 		];
 

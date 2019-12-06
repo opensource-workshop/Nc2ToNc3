@@ -105,6 +105,19 @@ class Nc2ToNc3Page extends Nc2ToNc3AppModel {
 			}
 		}
 
+		// add by opensource-workshop.jp
+		// NC2のグループルーム・追加したパブリックルームに設定したpermalinkをNC3へ反映する対応
+		// https://github.com/NetCommons3/NetCommons3/issues/1069
+		// nc2_to_nc3_mapsにNC2グループルームのIDがないため、移行されなかった。そのためここで追加する。
+		// [詳細]
+		// NC2グループルームは、Nc2ToNc3Page::__generateNc3Page() で $map = $this->getMap($nc2Page['Nc2Page']['parent_id']) が空になり、permalinkが変換されなかった。
+		// グループルームは $nc2Page['Nc2Page']['parent_id'] = 2でした。
+		$idMapCommunity = [
+			// NC2グループルームのparent_id(=page_id, 固定) => コミュニティスペースのparent_id(=page_id, 固定)
+			2 => 3
+		];
+		$this->saveMap('Page', $idMapCommunity);
+
 		foreach ($nc2Pages as $nc2Page) {
 			if (!$this->__savePageFromNc2WhileDividing($nc2Page['Nc2Page']['lang_dirname'])) {
 				return false;
