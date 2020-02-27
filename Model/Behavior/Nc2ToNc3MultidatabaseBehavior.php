@@ -558,7 +558,7 @@ class Nc2ToNc3MultidatabaseBehavior extends Nc2ToNc3BaseBehavior {
 			$nc2Multidatabase['Nc2Multidatabase']['title_metadata_id']);
 
 		$data['MultidatabaseMetadata'] = [
-			//'key' => $nc3Multidatabase['Multidatabase']['key'], //
+			'key' => $nc3Multidatabase['Multidatabase']['key'], // bugfix: MultidatabaseMetadata.keyは通常の1件づつランダムなkeyではなく、Multidatabase.keyを明示的にセットする
 			'multidatabase_id' => $nc3MultidatabaseId,
 			'language_id' => $this->getLanguageIdFromNc2($model),
 			'name' => $nc2Metadatum['Nc2MultidatabaseMetadata']['name'],
